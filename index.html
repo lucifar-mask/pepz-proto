@@ -11,8 +11,10 @@
       lets chrome like the header's translucent blur background re-theme too. */
     --card:#0f0f0f;
     --muted-surface:#141414;
-    --brand:#00f0ff;
-    --brand-glow-rgb:0,240,255; /* same value as --brand, as an R,G,B triplet so
+    --brand:#2fb8c7; /* muted teal-cyan (was a pure neon #00f0ff) — same hue
+      family, dialed back so borders/glows/text read as a calm accent rather
+      than a saturated highlighter color. */
+    --brand-glow-rgb:47,184,199; /* same value as --brand, as an R,G,B triplet so
       it can be dropped into rgba(var(--brand-glow-rgb), alpha) for every glow/
       shadow in the file — lets a single global theme swap (see html.theme-her
       below) re-tint every glow effect site-wide, not just solid fills. */
@@ -41,8 +43,9 @@
     --bg-rgb:255,255,255;
     --card:#ffffff;
     --muted-surface:#f7f2f6;
-    --brand:#ff00f6;
-    --brand-glow-rgb:255,0,246;
+    --brand:#d6479e; /* muted rose-magenta (was a pure neon #ff00f6), same
+      dial-back treatment as the cyan above. */
+    --brand-glow-rgb:214,71,158;
     --fg:#000000;
     --muted-fg:#6b5a68;
     --border:rgba(0,0,0,0.12);
@@ -122,7 +125,7 @@
   /* respect reduced-motion + drop the extra canvas on small screens where
      it's both least visible (content-dense, scrolled quickly) and most
      costly relative to the device's likely GPU budget */
-  @media (prefers-reduced-motion:reduce), (max-width:900px){
+  @media (prefers-reduced-motion:reduce), (max-width:900px), (hover:none), (pointer:coarse){
     #bgParticlesCanvas{display:none;}
   }
 
@@ -151,12 +154,68 @@
   .logo span{color:var(--brand);}
   .header-actions{display:flex;align-items:center;gap:24px;}
 
+  /* ---------- Mobile hamburger + drawer ----------
+     Hidden entirely above 900px (see the shared mobile media query at the
+     bottom of this stylesheet), so on desktop/tablet the existing
+     accountBtn/bookConsultBtn/side-nav keep working exactly as before. */
+  .hamburger-btn{ display:none; }
+  .mobile-nav-drawer{
+    display:none;
+    position:fixed; inset:0; z-index:250;
+    background:rgba(0,0,0,0.55);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease;
+  }
+  .mobile-nav-drawer.open{ opacity:1; pointer-events:auto; }
+  .mobile-nav-panel{
+    position:absolute; top:0; right:0; bottom:0;
+    width:min(340px, 84vw);
+    /* Pinned dark regardless of theme (not var(--card)/var(--fg)): this is
+       an overlay panel, not page content, so it gets its own always-dark
+       treatment rather than flipping white in "For Her" — consistent with
+       how #home/#explore-molecules stay dark in both themes. */
+    background:#0b0b0b;
+    color:#ffffff;
+    padding:28px 28px 32px;
+    display:flex;
+    flex-direction:column;
+    gap:32px;
+    transform:translateX(100%);
+    transition:transform .35s cubic-bezier(.16,.84,.44,1);
+    box-shadow:-12px 0 40px rgba(0,0,0,0.4);
+  }
+  .mobile-nav-drawer.open .mobile-nav-panel{ transform:translateX(0); }
+  .mobile-nav-close{ align-self:flex-end; color:#ffffff; }
+  .mobile-nav-links{ display:flex; flex-direction:column; gap:22px; margin-top:4px; }
+  .mobile-nav-links a{
+    color:#ffffff;
+    opacity:.6;
+    font-size:17px;
+    font-weight:700;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    transition:opacity .2s ease, color .2s ease;
+  }
+  .mobile-nav-links a.active{ opacity:1; color:var(--brand); }
+  .mobile-nav-actions{
+    margin-top:auto;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding-top:20px;
+    border-top:1px solid rgba(255,255,255,0.15);
+  }
+  .mobile-nav-actions .icon-btn{ color:#ffffff; flex:none; gap:8px; width:auto; border-radius:999px; padding:0 14px; }
+  .mobile-nav-actions .icon-btn span{ font-size:13px; font-weight:700; text-transform:uppercase; }
+  .mobile-nav-actions .btn-primary{ flex:1; }
+
   /* ---------- Unified button system ----------
      Button states approximated from real BOOK CONSULTATION styling — exact Figma
      BUTTONS frame (node 35:274) states pending Figma quota reset. .btn-primary
      below is the Figma-verified ground truth (confirmed real data from an earlier
-     pull); .btn-outline, .icon-btn, and the circular icon-buttons (.goal-plus,
-     .modal-close, .row-arrow, .play-btn) are aligned to the same hover-lift /
+     pull); .btn-outline, .icon-btn, and the circular icon-buttons (.modal-close,
+     .row-arrow, .play-btn) are aligned to the same hover-lift /
      active-press language so every button on the site behaves consistently:
        - static:            base style below
        - hover:             brighter glow + slight lift (translateY(-1px))
@@ -278,16 +337,20 @@
     font-weight:700;
     letter-spacing:0.5px;
     text-transform:uppercase;
-    /* pinned to white (not var(--fg)) rather than flipping with the theme:
-       this nav is a fixed overlay that sits on top of the hero's dark photo
-       for most of the scroll, so it needs to stay light-on-dark in both
-       themes rather than going black-on-black in "For Her" mode. */
-    color:#ffffff;
+    /* Follows --fg (white in "For Him", black in "For Her") so it stays
+       legible against every section's own background, which now flips
+       light/dark with the theme. The two exceptions are #home and
+       #explore-molecules, which are intentionally dark in BOTH themes —
+       while either is the active section, .side-nav gets an "on-dark"
+       class (see the IntersectionObserver below) that pins the nav back
+       to white so it doesn't go black-on-black over those two. */
+    color:var(--fg);
     opacity:0.55;
     position:relative;
     width:fit-content;
     transition:opacity .2s ease, color .2s ease;
   }
+  .side-nav.on-dark a{color:#ffffff;}
   .side-nav a:hover{opacity:1;color:var(--brand);}
   .side-nav a.active{opacity:1;}
   .side-nav a.active::after{
@@ -295,8 +358,9 @@
     position:absolute;
     left:0;bottom:-8px;
     width:46px;height:1px;
-    background:#ffffff;
+    background:var(--fg);
   }
+  .side-nav.on-dark a.active::after{background:#ffffff;}
 
   section{
     position:relative;
@@ -411,27 +475,22 @@
        AMBIENT BACKGROUND" near the top of this stylesheet), so it no
        longer needs its own local copy. */
     background:transparent;
-    padding-top:96px;
-    padding-left:40px;
-    padding-right:40px;
-    display:flex;
-    flex-direction:column;
-    height:100vh;
+    /* No longer forced to exactly one viewport (that was only needed for
+       the old horizontal-scroll card row) — the cards below are a plain
+       static vertical stack, so the section just sizes to its content with
+       a sensible floor. */
     min-height:100vh;
+    height:auto;
+    padding:160px 40px 100px;
+    display:block;
   }
   .mission-bg{
     /* the gradient this used to paint locally now comes from the global
-       #siteGradientBg layer instead — kept as an empty hook (still
-       referenced by unused .molecule-deco rules below) rather than
+       #siteGradientBg layer instead — kept as an empty hook rather than
        removing the element from the markup. */
     position:absolute;inset:0;
     z-index:0;
     pointer-events:none;
-  }
-  .mission-bg .molecule-deco{
-    position:absolute;
-    opacity:0.35;
-    filter:blur(0.5px);
   }
   .mission-inner{
     position:relative;
@@ -439,267 +498,61 @@
     max-width:1400px;
     margin:0 auto;
     width:100%;
-    /* side margins now come from #one-mission's own padding above (matching
-       exactly how .products-inner/#productsView are structured) — no
-       redundant left/right padding here, only vertical. */
-    padding:64px 0 40px;
-    display:flex;
-    flex-direction:column;
-    flex:1;
-    min-height:0;
   }
   .mission-heading{
     font-weight:900;
     font-size:clamp(32px,5.5vw,96px);
     text-transform:uppercase;
     line-height:1.05;
-    margin:0 0 8px;
+    margin:0 0 40px;
   }
   .mission-heading .accent{color:var(--brand);animation:glow-pulse-text 3s ease-in-out infinite;}
-  .mission-hint-row{
-    display:flex;
-    align-items:center;
-    gap:16px;
-    margin:24px 0 40px;
-  }
-  .mission-hint{
-    font-size:16px;
-    font-weight:300;
-    text-transform:uppercase;
-    color:var(--brand);
-    white-space:nowrap;
-  }
-  .mission-hint-line{
-    flex:1;
-    height:1px;
-    background:linear-gradient(90deg, var(--brand), rgba(var(--brand-glow-rgb),0.15));
-    max-width:640px;
-  }
 
-  .mission-viewport{
-    position:relative;
+  /* ---- Static landscape mission cards ----
+     Replaces the old click-to-expand vertical cards: each goal is a single
+     wide, static card with the summary already on it — no interaction, no
+     separate detail view to open. */
+  .mission-cards-stack{
     display:flex;
     flex-direction:column;
-    flex:1;
-    min-height:0;
+    gap:20px;
   }
-  .card-row-wrap{
-    position:relative;
-    /* break out of #one-mission's 40px side padding so the row runs all the
-       way to the true screen edge on typical viewport widths — matches the
-       Figma layout where the 4th card is visibly cut off at the viewport
-       edge with the arrow sitting right on that edge, rather than looking
-       boxed-in/contained. On very wide screens this is capped by
-       .mission-inner's max-width, same as .products-inner. */
-    margin-right:-40px;
-    flex:1;
-    min-height:0;
-  }
-  .card-row{
+  .mission-card{
     display:flex;
-    gap:24px;
-    overflow-x:auto;
-    scroll-behavior:smooth;
-    scrollbar-width:none;
-    /* setting overflow-x:auto forces overflow-y to compute as 'auto' too
-       (CSS overflow spec), so this row clips vertically at its own box —
-       needs enough top padding to fit the :hover translateY(-6px) lift plus
-       the glow-pulse-border box-shadow bleed, or the card's top edge gets
-       visibly clipped/"disappears" on hover. 4px was not enough. */
-    padding:24px 56px 24px 8px;
-    position:relative;
-    height:100%;
-  }
-  .card-row::-webkit-scrollbar{display:none;}
-
-  /* ---- FLIP shared-element card expansion ----
-     .goal-card is the single element that grows from its grid slot into the
-     full detail view. During the animation it's promoted to position:fixed
-     with an explicit top/left/width/height (the FIRST rect), then on the next
-     frame those values are transitioned to the LAST rect (full viewport-ish
-     panel). The other cards get .card-collapsing to fade/shrink out of the way. */
-  .goal-card{
-    flex:0 0 min(460px,60vw);
-    width:min(460px,60vw);
-    height:100%;
+    align-items:center;
+    gap:56px;
+    width:100%;
     border-radius:25px;
     border:1px solid var(--brand);
     background:linear-gradient(180deg, var(--card) 0%, var(--bg) 100%);
-    position:relative;
-    padding:32px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    cursor:default;
-    animation:glow-pulse-border 3.4s ease-in-out infinite;
-    will-change:transform;
-    transition:transform .25s ease, box-shadow .25s ease;
+    padding:44px 56px;
   }
-  .goal-card:not(.card-flipping):hover{
-    transform:translateY(-6px);
-    box-shadow:0 14px 44px rgba(var(--brand-glow-rgb),0.2);
-  }
-  .goal-card.card-flipping{ animation:none; }
-  .goal-card.card-flipping{
-    position:fixed;
-    z-index:60;
-    top:0;left:0;
-    transition:top .5s cubic-bezier(.16,.84,.44,1),
-               left .5s cubic-bezier(.16,.84,.44,1),
-               width .5s cubic-bezier(.16,.84,.44,1),
-               height .5s cubic-bezier(.16,.84,.44,1),
-               border-radius .5s cubic-bezier(.16,.84,.44,1),
-               padding .5s cubic-bezier(.16,.84,.44,1),
-               justify-content 0s;
-    box-shadow:0 30px 80px rgba(0,0,0,0.55);
-  }
-  .goal-card.card-expanded{
-    justify-content:flex-start;
-    align-items:flex-start;
-    text-align:left;
-    overflow-y:auto;
-    z-index:61;
-    padding:64px 96px;
-    border-radius:0;
-  }
-  .goal-card.card-collapsing{
-    transition:opacity .35s ease, transform .35s ease;
-    opacity:0;
-    transform:scale(.92);
-    pointer-events:none;
-  }
-  /* invisible flex-sized stand-in left in the card's original grid slot while
-     it's expanded, so the row keeps its natural layout/scroll width and
-     collapse always has an accurate, up-to-date target rect to animate back
-     to (robust against page scroll / resize while expanded). */
-  .card-placeholder{
-    visibility:hidden;
-    pointer-events:none;
-    animation:none;
-  }
-  /* single contextual arrow while a card is expanded, cycles to the next
-     goal's detail view without returning to the grid first — mirrors the
-     row-arrow motif used for the collapsed card row. */
-  .expanded-arrow{
-    position:fixed;
-    top:50%;right:40px;
-    left:auto;
-    transform:translateY(-50%);
-    z-index:65;
-  }
-  .expanded-arrow.hidden{opacity:0;pointer-events:none;}
-  .goal-card h3{
+  .mission-card-title{
+    flex:0 0 220px;
     font-weight:900;
-    font-size:clamp(28px,3.2vw,48px);
+    font-size:clamp(22px,2.3vw,32px);
     color:var(--brand);
     text-transform:uppercase;
-    line-height:1.18;
+    line-height:1.15;
     margin:0;
-    transition:font-size .4s ease, margin .4s ease;
   }
-  .goal-card.card-expanded h3{
-    font-size:clamp(28px,3.5vw,48px);
-    margin:0 0 32px;
-    text-align:left;
-  }
-  .goal-plus{
-    position:absolute;
-    right:32px;
-    bottom:32px;
-    width:46px;height:46px;
-    border-radius:50%;
-    border:1.5px solid var(--brand);
-    background:transparent;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    color:var(--brand);
-    transition:transform .35s cubic-bezier(.16,.84,.44,1), background .2s ease, top .4s ease, bottom .4s ease, left .4s ease, right .4s ease;
-    animation:glow-pulse-icon 3s ease-in-out infinite;
-  }
-  .goal-plus:hover{background:rgba(var(--brand-glow-rgb),0.1);box-shadow:0 0 18px rgba(var(--brand-glow-rgb),0.5);}
-  .goal-plus:active{animation:btn-glow-pop-outline .4s ease-out;}
-  .goal-plus:active svg{transform:scale(.9);}
-  .goal-plus svg{width:20px;height:20px;transition:transform .35s cubic-bezier(.16,.84,.44,1);}
-  .goal-plus.is-close svg{transform:rotate(45deg);}
-  .goal-plus.is-close:active svg{transform:rotate(45deg) scale(.9);}
-  .goal-card.card-expanded .goal-plus{
-    left:auto;
-    bottom:auto;
-    top:40px;
-    right:40px;
-  }
-
-  .row-arrow{
-    position:absolute;
-    top:50%;
-    transform:translateY(-50%);
-    width:108px;height:108px;
-    border-radius:50%;
-    background:radial-gradient(circle, rgba(var(--brand-glow-rgb),0.9) 0%, rgba(var(--brand-glow-rgb),0.75) 60%, rgba(var(--brand-glow-rgb),0.55) 100%);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    border:none;
-    z-index:5;
-    transition:right .4s ease, left .4s ease, opacity .3s ease;
-    animation:glow-pulse-shadow 3s ease-in-out infinite;
-  }
-  /* card-row-wrap's right edge is now the true viewport edge (see
-     margin-right:-40px above), so inset the arrow from THAT edge rather
-     than overhanging off-screen. */
-  .row-arrow.arrow-right{right:20px;left:auto;}
-  .row-arrow.arrow-left{left:20px;right:auto;}
-  .row-arrow svg{width:36px;height:36px;color:#000;transition:transform .15s ease;}
-  /* the chevron SVG itself always points right — flip it 180deg when the
-     button is pinned to the left edge, so it actually points left (was
-     previously just repositioned without flipping, so it kept pointing the
-     wrong way). */
-  .row-arrow.arrow-left svg{transform:rotate(180deg);}
-  .row-arrow.hidden{opacity:0;pointer-events:none;}
-  .row-arrow:hover{filter:brightness(1.1);}
-  .row-arrow:active{animation:btn-glow-pop .4s ease-out;}
-  .row-arrow:active svg{transform:scale(.9);}
-  .row-arrow.arrow-left:active svg{transform:rotate(180deg) scale(.9);}
-
-  /* Detail content lives inside the card itself (shared element), hidden
-     until the card is expanded, so the SAME node grows rather than a
-     separate panel cross-fading in. */
-  .goal-card-detail{
-    display:none;
-    flex-direction:column;
-    flex:1 1 auto;
-    min-height:0;
-  }
-  .goal-card.card-expanded .goal-card-detail{
-    display:flex;
-  }
-  .goal-card.card-expanded .goal-card-summary{
-    display:none;
-  }
-  .detail-body{
+  .mission-card-body{
+    flex:1;
+    min-width:0;
     font-weight:300;
-    font-size:clamp(15px,1.6vw,26px);
-    line-height:1.5;
+    font-size:clamp(14px,1.25vw,17px);
+    line-height:1.6;
     color:var(--fg);
-    max-width:1078px;
-    opacity:0;
-    transition:opacity .3s ease .15s;
+    margin:0;
   }
-  .goal-card.card-expanded .detail-body{opacity:1;}
-  .detail-body b{font-weight:800;}
-  .detail-body .accent-text{color:var(--brand);font-weight:600;}
-  .detail-actions{
-    margin-top:auto;
-    padding-top:32px;
-    opacity:0;
-    transition:opacity .3s ease .2s;
-  }
-  .goal-card.card-expanded .detail-actions{opacity:1;}
+  .mission-card-body b{font-weight:700;}
+  /* Bold + --fg rather than a --brand color swap: at this font-size, small
+     colored inline text can't reliably hit 4.5:1 contrast against the "For
+     Her" white background (checked: the muted pink only reaches ~4.0:1
+     here), and color-only emphasis is a weaker signal for colorblind
+     readers anyway — bold weight draws the same attention without either
+     problem. */
+  .mission-card-body .accent-text{color:var(--fg);font-weight:800;}
 
   /* ---------- HOW IT WORKS ---------- */
   #how-it-works{
@@ -821,14 +674,17 @@
     position:absolute; border-radius:50%;
     filter: blur(70px);
     mix-blend-mode: screen;
-    background: radial-gradient(circle at 32% 30%, rgba(150,240,255,.85), rgba(20,140,165,.4) 45%, rgba(5,7,8,0) 72%);
+    /* Alpha stops cut roughly in half (.85/.4 -> .35/.15) and blob count
+       trimmed from 5 to 2 above, per "remove most of the aura/halo" — keeps
+       a faint ambient glow without the previous heavy wash. */
+    background: radial-gradient(circle at 32% 30%, rgba(150,240,255,.35), rgba(20,140,165,.15) 45%, rgba(5,7,8,0) 72%);
     animation: aura-drift ease-in-out infinite;
   }
   /* "For Her": aura blobs re-tint pink/magenta; the section's own #050505
      backdrop stays put (background intentionally left dark, see #explore-
      molecules comment above) — only the glowing accents change. */
   html.theme-her #explore-molecules #aura .blob{
-    background: radial-gradient(circle at 32% 30%, rgba(255,150,240,.85), rgba(165,20,140,.4) 45%, rgba(5,7,8,0) 72%);
+    background: radial-gradient(circle at 32% 30%, rgba(255,150,240,.35), rgba(165,20,140,.15) 45%, rgba(5,7,8,0) 72%);
   }
   @keyframes aura-drift{
     0%   { transform: translate(0,0) scale(1); }
@@ -854,6 +710,22 @@
     z-index:2; pointer-events:none;
     color:var(--muted-fg); font-size:15px; letter-spacing:.03em;
   }
+  /* #explore-molecules is dark in both themes (see comment on the section
+     itself), so icon buttons inside it need to stay white rather than
+     following --fg, which would go black-on-black in "For Her" — same fix
+     as the side-nav above. */
+  #explore-molecules .icon-btn{ color:#ffffff; }
+  #explore-molecules .mol-scene-toggle{
+    position:absolute; top:64px; right:5%;
+    z-index:3;
+    background:rgba(5,5,5,0.4);
+    backdrop-filter:blur(6px);
+  }
+  .mol-scene-toggle .icon-play{ display:none; }
+  .mol-scene-toggle.is-playing .icon-pause{ display:block; }
+  .mol-scene-toggle.is-playing .icon-play{ display:none; }
+  .mol-scene-toggle:not(.is-playing) .icon-pause{ display:none; }
+  .mol-scene-toggle:not(.is-playing) .icon-play{ display:block; }
   #explore-molecules #molTooltip{
     position:absolute; pointer-events:none; z-index:10;
     transform: translate(-50%, -140%);
@@ -1635,10 +1507,46 @@
 
   @media (max-width:900px){
     .side-nav{display:none;}
-    .goal-card{flex:0 0 78vw;width:78vw;height:100%;}
-    .goal-card.card-expanded{padding:32px;}
+    /* Mobile header = Logo / theme switch / hamburger only. */
+    #accountBtn, #bookConsultBtn{ display:none; }
+    .header-actions{ gap:14px; }
+    .hamburger-btn{ display:flex; }
+    .mobile-nav-drawer{ display:block; }
+    /* Bump the two icon-buttons visitors are actually likely to tap on
+       mobile up to the ~44px minimum touch target size (Apple HIG / Material
+       guidance) — the base .icon-btn's 38px is fine as a mouse target on
+       desktop but is tight for a thumb. */
+    .hamburger-btn, .mol-scene-toggle{ width:44px; height:44px; }
+    #one-mission{padding:140px 20px 80px;}
+    .mission-card{
+      flex-direction:column;
+      align-items:flex-start;
+      gap:14px;
+      padding:28px 24px;
+    }
+    .mission-card-title{ flex:none; }
     #productsView{padding:140px 20px 80px;}
-    .products-grid{grid-template-columns:repeat(auto-fill,minmax(267px,1fr));}
+    /* 2 columns, not 1 or 3, per request — the card itself switches from
+       the desktop's fixed 267x504 px frame to a fluid width + aspect-ratio
+       box below, with every absolutely-positioned child converted from
+       fixed px to % of the card so the whole design scales together
+       instead of overflowing/misaligning at a smaller size. */
+    .products-grid{grid-template-columns:repeat(2, 1fr); gap:14px 12px;}
+    .product-card{
+      width:100%; height:auto; aspect-ratio:267/504;
+    }
+    .product-photo{ width:100%; height:auto; aspect-ratio:1/1; }
+    .product-quick-add{
+      width:34px; height:34px; top:6px; right:6px;
+    }
+    .coming-soon-badge{
+      top:47.2%; width:96px; height:26px; font-size:9px;
+    }
+    .product-name{ left:10.9%; top:56.5%; font-size:14px; }
+    .product-desc{ left:10.9%; top:63%; width:78.3%; font-size:10px; line-height:1.4; }
+    .product-divider{ left:16.7%; top:80%; width:67%; }
+    .product-footer{ left:10.9%; top:84.5%; width:78.3%; }
+    .product-footer .btn-outline{ padding:9px 10px; font-size:11px; }
     .filter-apply-btn{margin-left:0;}
     #build-routine{padding:120px 20px 60px;}
     #contact{padding:120px 20px 60px;}
@@ -1675,14 +1583,21 @@
       <button class="gender-switch-btn active" id="headerTabHim" data-gender="him" role="tab" aria-selected="true">For Him</button>
       <button class="gender-switch-btn" id="headerTabHer" data-gender="her" role="tab" aria-selected="false">For Her</button>
     </div>
-    <button class="icon-btn" id="accountBtn" aria-label="Account / Sign in">
+    <button class="icon-btn book-modal-trigger" id="accountBtn" aria-label="Account / Sign in">
       <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z" stroke="currentColor" stroke-width="1.6"/><path d="M4 20c1.4-3.8 4.6-6 8-6s6.6 2.2 8 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
     </button>
-    <button class="btn-primary" id="bookConsultBtn">Book Consultation</button>
+    <button class="btn-primary book-modal-trigger" id="bookConsultBtn">Book Consultation</button>
+    <!-- Mobile-only: replaces accountBtn + bookConsultBtn (hidden under
+         900px, see media query) with a single hamburger that opens the
+         drawer below — keeps the mobile header down to Logo / theme switch
+         / hamburger as requested. -->
+    <button class="icon-btn hamburger-btn" id="mobileMenuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNavDrawer">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
   </div>
 </header>
 
-<!-- ================= SIDE NAV ================= -->
+<!-- ================= SIDE NAV (desktop/tablet) ================= -->
 <div class="nav-hover-zone" id="navHoverZone"></div>
 <nav class="side-nav nav-visible" id="sideNav">
   <a href="#home" class="nav-link active" data-target="home">Home</a>
@@ -1693,6 +1608,34 @@
   <a href="#build-routine" class="nav-link" data-target="build-routine">Build My Routine</a>
   <a href="#contact" class="nav-link" data-target="contact">Contact Us</a>
 </nav>
+
+<!-- ================= MOBILE NAV DRAWER =================
+     Only reachable via the hamburger button above, which only exists in
+     the mobile layout — but also force-hidden past 900px (see CSS) so it
+     can never appear on desktop even if toggled open and then resized. -->
+<div class="mobile-nav-drawer" id="mobileNavDrawer" aria-hidden="true">
+  <div class="mobile-nav-panel">
+    <button class="icon-btn mobile-nav-close" id="mobileNavCloseBtn" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <nav class="mobile-nav-links">
+      <a href="#home" class="nav-link" data-target="home">Home</a>
+      <a href="#one-mission" class="nav-link" data-target="one-mission">Our Mission</a>
+      <a href="#how-it-works" class="nav-link" data-target="how-it-works">How It Works</a>
+      <a href="#explore-molecules" class="nav-link" data-target="explore-molecules">Explore the Molecules</a>
+      <a href="#productsView" class="nav-link" data-target="productsView">Our Products</a>
+      <a href="#build-routine" class="nav-link" data-target="build-routine">Build My Routine</a>
+      <a href="#contact" class="nav-link" data-target="contact">Contact Us</a>
+    </nav>
+    <div class="mobile-nav-actions">
+      <button class="icon-btn book-modal-trigger" id="mobileAccountBtn" aria-label="Account / Sign in">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z" stroke="currentColor" stroke-width="1.6"/><path d="M4 20c1.4-3.8 4.6-6 8-6s6.6 2.2 8 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span>Account</span>
+      </button>
+      <button class="btn-primary book-modal-trigger" id="mobileBookBtn">Book Consultation</button>
+    </div>
+  </div>
+</div>
 
 <main>
 
@@ -1720,83 +1663,28 @@
     <div class="mission-inner">
 
       <h2 class="mission-heading"><span class="accent">ONE</span> MISSION -<br>4 <span class="accent">GOALS</span></h2>
-      <div class="mission-hint-row">
-        <span class="mission-hint">click the '+' to learn more</span>
-        <span class="mission-hint-line"></span>
+
+      <!-- Static landscape cards — info is on the card itself, no expand
+           interaction, no separate detail view (per request: no "+", no
+           "View Products" here). -->
+      <div class="mission-cards-stack">
+        <article class="mission-card">
+          <h3 class="mission-card-title">MUSCLE<br>RECOVERY</h3>
+          <p class="mission-card-body">Peptide-based recovery protocols accelerate the body's own repair signaling rather than masking pain. <span class="accent-text">BPC-157 and TB-500</span> speed tissue regeneration after strains, tears, or surgery while calming inflammation. <b>Rehab that used to take months can compress into weeks.</b></p>
+        </article>
+        <article class="mission-card">
+          <h3 class="mission-card-title">LONGEVITY</h3>
+          <p class="mission-card-body">Longevity-focused peptides target the cellular machinery that determines how well the body keeps repairing itself. <span class="accent-text">NAD+ and Epitalon</span> restore mitochondrial energy production and support the deep sleep where most regeneration happens. <b>The goal isn't slowing a clock — it's a longer, more resilient healthspan.</b></p>
+        </article>
+        <article class="mission-card">
+          <h3 class="mission-card-title">BEAUTY</h3>
+          <p class="mission-card-body">Beauty-focused peptides replace signals the skin naturally stops producing with age, rather than masking the surface effects. <span class="accent-text">GHK-Cu</span> rebuilds the dermal matrix from below, restoring thickness and elasticity while supporting denser hair growth. <b>Results compound over weeks rather than fading once you stop.</b></p>
+        </article>
+        <article class="mission-card">
+          <h3 class="mission-card-title">FITNESS</h3>
+          <p class="mission-card-body">Fitness-focused peptides amplify signals the body already uses to build and maintain lean tissue. <span class="accent-text">CJC-1295 and Ipamorelin</span> nudge natural GH release overnight, supporting lean muscle and faster recovery between sessions. <b>The effect compounds across training, recovery, and cognition.</b></p>
+        </article>
       </div>
-
-      <!-- FLIP shared-element cards: each .goal-card IS the detail view —
-           clicking '+' grows this same element via captured getBoundingClientRect
-           (FIRST) -> class toggle (LAST) -> inverse transform animated to identity.
-           See card-flip JS below. No separate detail panel element. -->
-      <div class="card-row-wrap">
-        <div class="card-row" id="cardRow">
-          <article class="goal-card" data-goal="muscle-recovery">
-            <div class="goal-card-summary">
-              <h3>MUSCLE<br>RECOVERY</h3>
-            </div>
-            <div class="goal-card-detail">
-              <h3>MUSCLE RECOVERY</h3>
-              <p class="detail-body">Peptide-based recovery protocols work by accelerating the body's own repair signaling rather than masking pain. Compounds like <span class="accent-text">BPC-157 and TB-500</span> promote angiogenesis (new blood vessel growth) into damaged tendons, ligaments, and gut tissue, areas that are naturally slow to heal due to poor blood supply. This translates to faster tissue regeneration after strains, tears, or surgery, while also calming systemic inflammation and supporting gut lining integrity, which is often compromised by intense training. <b>The result is a shorter window between injury and return to full output: rehab that used to take months can compress into weeks, letting athletes train harder, recover cleaner, and stay consistent without the setbacks that chronic micro-injuries usually cause.</b></p>
-              <div class="detail-actions"><button class="btn-outline">View Products</button></div>
-            </div>
-            <button class="goal-plus" data-goal="muscle-recovery" aria-label="Expand Muscle Recovery">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            </button>
-          </article>
-          <article class="goal-card" data-goal="longevity">
-            <div class="goal-card-summary">
-              <h3>LONGEVITY</h3>
-            </div>
-            <div class="goal-card-detail">
-              <h3>LONGEVITY</h3>
-              <!-- Real copy confirmed from Figma node 11:155 -->
-              <p class="detail-body">Longevity-focused peptides work upstream of the visible signs of aging, targeting the cellular machinery that determines how well — and how long — the body keeps repairing itself. Compounds like <span class="accent-text">NAD+ and Epitalon</span> restore mitochondrial energy production and support circadian rhythm, helping cells generate the fuel they need for repair while deepening the restorative sleep where most regeneration happens. Others reinforce immune resilience and cellular turnover, addressing the slow breakdown in repair efficiency that drives age-related decline rather than just its symptoms. <b>Used together, these protocols aren't about slowing a clock — they're about restoring the cellular conditions for a longer, more resilient healthspan.</b></p>
-              <div class="detail-actions"><button class="btn-outline">View Products</button></div>
-            </div>
-            <button class="goal-plus" data-goal="longevity" aria-label="Expand Longevity">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            </button>
-          </article>
-          <article class="goal-card" data-goal="beauty">
-            <div class="goal-card-summary">
-              <h3>BEAUTY</h3>
-            </div>
-            <div class="goal-card-detail">
-              <h3>BEAUTY</h3>
-              <!-- Real copy confirmed from Figma node 11:224 -->
-              <p class="detail-body">Beauty-focused peptides work by replacing signals the skin naturally stops producing with age, rather than masking the surface effects of that decline. <span class="accent-text">GHK-Cu</span>, a copper-binding peptide the body produces abundantly in youth and far less by the thirties, rebuilds the dermal matrix from below — stimulating collagen, elastin, and glycosaminoglycan synthesis to restore thickness and elasticity while accelerating repair of photodamage and supporting denser hair growth at the follicle. <b>Rather than sitting on top of the skin like a topical treatment, these peptides work systemically and topically to repair the underlying structure, producing results that compound over weeks rather than fading the moment you stop using them.</b></p>
-              <div class="detail-actions"><button class="btn-outline">View Products</button></div>
-            </div>
-            <button class="goal-plus" data-goal="beauty" aria-label="Expand Beauty">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            </button>
-          </article>
-          <article class="goal-card" data-goal="fitness">
-            <div class="goal-card-summary">
-              <h3>FITNESS</h3>
-            </div>
-            <div class="goal-card-detail">
-              <h3>FITNESS</h3>
-              <!-- Real copy confirmed from Figma node 11:248 -->
-              <p class="detail-body">Fitness-focused peptides work by amplifying signals the body already uses to build and maintain lean tissue, rather than introducing something foreign to it. Growth-hormone secretagogues like <span class="accent-text">CJC-1295 and Ipamorelin</span> nudge the pituitary to pulse natural GH overnight, supporting lean muscle mass and shortening recovery windows between sessions, while mitochondrial peptides like MOTS-C boost exercise capacity and metabolic efficiency at the cellular level. <b>The effect compounds across training, recovery, and cognition — deeper sleep, leaner body composition, faster bounce-back from hard sessions, and a sharper edge for athletes, lifters, and anyone pushing to optimize physical output.</b></p>
-              <div class="detail-actions"><button class="btn-outline">View Products</button></div>
-            </div>
-            <button class="goal-plus" data-goal="fitness" aria-label="Expand Fitness">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            </button>
-          </article>
-        </div>
-
-        <button class="row-arrow arrow-right" id="rowArrow" aria-label="Scroll cards">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-
-      <!-- visible only while a card is expanded fullscreen: advances to the next goal's detail view -->
-      <button class="row-arrow expanded-arrow hidden" id="expandedArrow" aria-label="Next goal">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
 
     </div>
   </section>
@@ -1824,16 +1712,23 @@
        loop is gated by an IntersectionObserver (see script below) so it only
        runs while the section is actually visible. -->
   <section id="explore-molecules">
+    <!-- Trimmed to 2 faint blobs (was 5) — see #aura .blob below for the
+         reduced-opacity/reduced-blur rework ("remove most of the aura/halo"). -->
     <div id="aura" aria-hidden="true">
-      <div class="blob" style="width:38vw; height:38vw; top:8%; left:5%; animation-duration:32s;"></div>
-      <div class="blob" style="width:30vw; height:30vw; top:55%; left:60%; animation-duration:26s; animation-delay:-6s;"></div>
-      <div class="blob" style="width:26vw; height:26vw; top:15%; left:65%; animation-duration:38s; animation-delay:-14s;"></div>
-      <div class="blob" style="width:34vw; height:34vw; top:60%; left:10%; animation-duration:29s; animation-delay:-20s;"></div>
-      <div class="blob" style="width:20vw; height:20vw; top:35%; left:38%; animation-duration:22s; animation-delay:-9s; opacity:.6;"></div>
+      <div class="blob" style="width:30vw; height:30vw; top:10%; left:8%; animation-duration:32s;"></div>
+      <div class="blob" style="width:24vw; height:24vw; top:56%; left:62%; animation-duration:26s; animation-delay:-6s;"></div>
     </div>
     <div id="molTitle"><span class="white">EXPLORE THE </span><span class="cyan">MOLECULES</span></div>
     <p id="molSub">Hover a molecule to see what it is &mdash; drag to orbit on touch.</p>
     <div id="molTooltip"><div class="name"></div><div class="tag"></div></div>
+    <!-- Scene auto-plays on scroll-into-view like before, but this lets
+         visitors kill the render loop themselves if the site feels slow —
+         the loop is real GPU/CPU + RAM cost while it runs. See the
+         startScene/stopScene wiring in the module script below. -->
+    <button type="button" class="icon-btn mol-scene-toggle is-playing" id="molSceneToggle" aria-label="Stop molecule animation">
+      <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M8 5v14l11-7L8 5z"/></svg>
+    </button>
     <!-- <canvas> is created and appended by the three.js module script below -->
   </section>
 
@@ -2119,6 +2014,7 @@
     .map(function(id){ return document.getElementById(id); })
     .filter(Boolean);
 
+  var DARK_SECTIONS = ['home', 'explore-molecules'];
   var observer = new IntersectionObserver(function(entries){
     entries.forEach(function(entry){
       if (entry.isIntersecting){
@@ -2126,209 +2022,15 @@
         navLinks.forEach(function(link){
           link.classList.toggle('active', link.dataset.target === id);
         });
+        // #home and #explore-molecules are dark in both themes — pin the
+        // nav text to white while either is the active section instead of
+        // following --fg, which would go black-on-black in "For Her".
+        sideNav.classList.toggle('on-dark', DARK_SECTIONS.indexOf(id) !== -1);
       }
     });
   }, {threshold:0.5});
   sections.forEach(function(s){ observer.observe(s); });
 
-  /* ---------------- One Mission: card row arrow ---------------- */
-  var cardRow = document.getElementById('cardRow');
-  var rowArrow = document.getElementById('rowArrow');
-
-  function maxScroll(){
-    return cardRow.scrollWidth - cardRow.clientWidth;
-  }
-
-  function updateArrow(){
-    var max = maxScroll();
-    if (max <= 2){
-      rowArrow.classList.add('hidden');
-      return;
-    }
-    rowArrow.classList.remove('hidden');
-    var atEnd = cardRow.scrollLeft >= max - 2;
-    if (atEnd){
-      rowArrow.classList.remove('arrow-right');
-      rowArrow.classList.add('arrow-left');
-    } else {
-      rowArrow.classList.remove('arrow-left');
-      rowArrow.classList.add('arrow-right');
-    }
-  }
-
-  rowArrow.addEventListener('click', function(){
-    var max = maxScroll();
-    var atEnd = cardRow.scrollLeft >= max - 2;
-    cardRow.scrollTo({
-      left: atEnd ? 0 : max,
-      behavior:'smooth'
-    });
-  });
-  cardRow.addEventListener('scroll', updateArrow, {passive:true});
-  window.addEventListener('resize', updateArrow);
-  updateArrow();
-
-  /* ---------------- One Mission: FLIP shared-element card expand/collapse ----------------
-     Same card element grows from its grid slot into the full detail view:
-       1. FIRST: capture the clicked card's current rect (its grid position/size).
-       2. Toggle state classes (card-expanded on the clicked card; card-collapsing
-          on the other three so they fade/shrink out of the way).
-       3. LAST: capture the new rect after layout settles.
-       4. Apply the FIRST rect as fixed top/left/width/height (so visually nothing
-          has moved yet), force reflow, then transition those values to the LAST
-          rect -> reads as one continuous growth, not two elements swapping.
-     Reversing ("x") runs the same FLIP in the opposite direction back to the
-     card's original grid box, then removes the fixed positioning entirely. */
-  var goalCards = Array.prototype.slice.call(document.querySelectorAll('.goal-card'));
-  var expandedCard = null;
-  var flipAnimating = false;
-  var placeholders = new WeakMap(); // card -> its in-grid stand-in element
-  var expandedArrowBtn = document.getElementById('expandedArrow');
-  var FLIP_MS = 520; // must be >= the CSS transition duration used below
-
-  function clearInlineRect(card){
-    card.style.top = '';
-    card.style.left = '';
-    card.style.width = '';
-    card.style.height = '';
-  }
-
-  function fullscreenRect(){
-    // fill the whole screen but align under the fixed header, not behind it
-    var header = document.querySelector('.site-header');
-    var headerH = header ? header.offsetHeight : 0;
-    return { top:headerH, left:0, width:window.innerWidth, height:window.innerHeight - headerH };
-  }
-
-  function animateBox(card, from, to, onDone){
-    card.style.transition = 'none';
-    card.style.top = from.top + 'px';
-    card.style.left = from.left + 'px';
-    card.style.width = from.width + 'px';
-    card.style.height = from.height + 'px';
-    void card.offsetWidth; // force reflow so FROM is committed before animating
-    card.style.transition = '';
-
-    var done = false;
-    function finish(){
-      if (done) return;
-      done = true;
-      card.removeEventListener('transitionend', onEnd);
-      clearTimeout(fallback);
-      onDone();
-    }
-    function onEnd(e){
-      if (e.target === card && e.propertyName === 'width') finish();
-    }
-    card.addEventListener('transitionend', onEnd);
-    // safety net: some browsers/layouts can skip firing transitionend if a
-    // value happens not to change — never let the UI get permanently stuck.
-    var fallback = setTimeout(finish, FLIP_MS + 150);
-
-    requestAnimationFrame(function(){
-      requestAnimationFrame(function(){
-        card.style.top = to.top + 'px';
-        card.style.left = to.left + 'px';
-        card.style.width = to.width + 'px';
-        card.style.height = to.height + 'px';
-      });
-    });
-  }
-
-  function expandCard(card){
-    if (flipAnimating || expandedCard) return;
-    flipAnimating = true;
-
-    var first = card.getBoundingClientRect();
-
-    // leave an invisible same-size stand-in in the grid so the row's layout
-    // and scroll width don't collapse while the real card is pulled out to
-    // position:fixed — this is also what collapse measures its target from.
-    var placeholder = document.createElement('div');
-    placeholder.className = 'goal-card card-placeholder';
-    placeholder.setAttribute('aria-hidden', 'true');
-    card.parentNode.insertBefore(placeholder, card.nextSibling);
-    placeholders.set(card, placeholder);
-
-    goalCards.forEach(function(c){
-      if (c === card){
-        c.classList.add('card-expanded');
-      } else {
-        c.classList.add('card-collapsing');
-      }
-    });
-    var plus = card.querySelector('.goal-plus');
-    if (plus) plus.classList.add('is-close');
-
-    card.classList.add('card-flipping');
-    document.body.style.overflow = 'hidden'; // lock background scroll while expanded
-
-    animateBox(card, first, fullscreenRect(), function(){
-      flipAnimating = false;
-      expandedCard = card;
-      expandedArrowBtn.classList.remove('hidden');
-    });
-  }
-
-  function collapseCard(card){
-    if (flipAnimating || expandedCard !== card) return;
-    flipAnimating = true;
-    expandedArrowBtn.classList.add('hidden');
-
-    var placeholder = placeholders.get(card);
-    var from = card.getBoundingClientRect();
-    // the placeholder reflects exactly where this card belongs right now
-    // (accounts for any row-scroll/resize that happened while expanded)
-    var to = placeholder ? placeholder.getBoundingClientRect() : first_fallback();
-    function first_fallback(){ return card.getBoundingClientRect(); }
-
-    card.classList.remove('card-expanded');
-    goalCards.forEach(function(c){ c.classList.remove('card-collapsing'); });
-    var plus = card.querySelector('.goal-plus');
-    if (plus) plus.classList.remove('is-close');
-
-    animateBox(card, from, to, function(){
-      card.classList.remove('card-flipping');
-      clearInlineRect(card);
-      if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
-      placeholders.delete(card);
-      document.body.style.overflow = '';
-      flipAnimating = false;
-      expandedCard = null;
-    });
-  }
-
-  function expandOnly(card){
-    // used by next/prev cycling: same as expandCard but assumes we're
-    // already in a clean (all-collapsed) grid state.
-    expandCard(card);
-  }
-
-  document.querySelectorAll('.goal-plus').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var card = btn.closest('.goal-card');
-      if (!card) return;
-      if (card.classList.contains('card-expanded')){
-        collapseCard(card);
-      } else {
-        expandCard(card);
-      }
-    });
-  });
-
-  expandedArrowBtn.addEventListener('click', function(){
-    if (!expandedCard || flipAnimating) return;
-    var idx = goalCards.indexOf(expandedCard);
-    var next = goalCards[(idx + 1) % goalCards.length];
-    var current = expandedCard;
-    collapseCard(current);
-    // wait for the collapse FLIP to fully settle, then expand the next goal
-    setTimeout(function(){ expandOnly(next); }, FLIP_MS + 40);
-  });
-
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && expandedCard) collapseCard(expandedCard);
-  });
 
   /* ---------------- How It Works: real video playback ---------------- */
   var playBtn = document.getElementById('playBtn');
@@ -2364,7 +2066,10 @@
 
   /* ---------------- Book Consultation modal ---------------- */
   var bookModal = document.getElementById('bookModal');
-  var openTriggers = [document.getElementById('bookConsultBtn'), document.getElementById('accountBtn')];
+  // .book-modal-trigger covers the desktop header's account/book buttons
+  // AND their mobile-drawer duplicates (mobileAccountBtn/mobileBookBtn) —
+  // one shared class instead of a hand-maintained id list.
+  var openTriggers = Array.prototype.slice.call(document.querySelectorAll('.book-modal-trigger'));
   var modalCloseBtn = document.getElementById('modalCloseBtn');
   var successCloseBtn = document.getElementById('successCloseBtn');
   var consultForm = document.getElementById('consultForm');
@@ -2395,6 +2100,43 @@
   });
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape' && bookModal.classList.contains('open')) closeModal();
+  });
+
+  /* ---------------- Mobile nav drawer ---------------- */
+  var mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  var mobileNavDrawer = document.getElementById('mobileNavDrawer');
+  var mobileNavCloseBtn = document.getElementById('mobileNavCloseBtn');
+
+  function openMobileDrawer(){
+    mobileNavDrawer.classList.add('open');
+    mobileNavDrawer.setAttribute('aria-hidden', 'false');
+    mobileMenuBtn.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMobileDrawer(){
+    mobileNavDrawer.classList.remove('open');
+    mobileNavDrawer.setAttribute('aria-hidden', 'true');
+    mobileMenuBtn.setAttribute('aria-expanded', 'false');
+    // Don't clear the scroll lock if the book modal is (about to be, or
+    // already) open on top of it — e.g. tapping "Book Consultation" inside
+    // the drawer fires both openModal() and this closer on the same click,
+    // and openModal() runs first, so bail here rather than undoing its lock.
+    if (!bookModal.classList.contains('open')) document.body.style.overflow = '';
+  }
+
+  if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openMobileDrawer);
+  if (mobileNavCloseBtn) mobileNavCloseBtn.addEventListener('click', closeMobileDrawer);
+  mobileNavDrawer.addEventListener('click', function(e){
+    if (e.target === mobileNavDrawer) closeMobileDrawer();
+  });
+  // Tapping a section link, or Book Consultation/Account (which open the
+  // modal on top), should tuck the drawer away rather than leaving it open
+  // behind whatever happens next.
+  mobileNavDrawer.querySelectorAll('.nav-link, .book-modal-trigger').forEach(function(el){
+    el.addEventListener('click', closeMobileDrawer);
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && mobileNavDrawer.classList.contains('open')) closeMobileDrawer();
   });
 
   consultForm.addEventListener('submit', function(e){
@@ -3275,11 +3017,14 @@ function buildPlaceholderMolecule(seed) {
   group.add(cage);
   group.userData.cage = cage;
 
+  // Scale/opacity both cut roughly in half from the original (3.6x/0.42) —
+  // per "remove most of the aura/halo", each molecule keeps a soft glow
+  // without blooming into its neighbors.
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({
     map: glowTexture, color: 0x22d3ee, transparent: true,
-    blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.42,
+    blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.22,
   }));
-  glow.scale.setScalar(shellRadius * 3.6);
+  glow.scale.setScalar(shellRadius * 2.0);
   group.add(glow);
   group.userData.glow = glow;
 
@@ -3337,18 +3082,21 @@ PEPTIDES.forEach((info, i) => {
    window so the page's global setGender() (outside this module script)
    can call it whenever the header Him/Her switch is clicked.
 --------------------------------------------------------- */
+// Palette dialed back from pure-neon to match the muted --brand/--brand-
+// glow-rgb CSS variables (see :root and html.theme-her) — same hue family,
+// lower saturation, so the scene reads as calm rather than a highlighter.
 const MOLECULE_ACCENT = {
   him: {
-    particle: 0x8fe9f5, wire: 0x22d3ee,
-    hubCoreEmissive: 0x0891a8, atomEmissive: 0x0891a8,
-    atomBrightEmissive: 0x22d3ee, atomSideEmissive: 0x0e7490, bondEmissive: 0x0e7490,
-    cage: 0x22d3ee, glow: 0x22d3ee, line: 0x22d3ee,
+    particle: 0x9fd9de, wire: 0x2fb8c7,
+    hubCoreEmissive: 0x0d7d8f, atomEmissive: 0x0d7d8f,
+    atomBrightEmissive: 0x2fb8c7, atomSideEmissive: 0x14707d, bondEmissive: 0x14707d,
+    cage: 0x2fb8c7, glow: 0x2fb8c7, line: 0x2fb8c7,
   },
   her: {
-    particle: 0xffb3f2, wire: 0xff2fe0,
-    hubCoreEmissive: 0x99046f, atomEmissive: 0x99046f,
-    atomBrightEmissive: 0xff2fe0, atomSideEmissive: 0x8a0868, bondEmissive: 0x8a0868,
-    cage: 0xff2fe0, glow: 0xff2fe0, line: 0xff2fe0,
+    particle: 0xe6a8cf, wire: 0xd6479e,
+    hubCoreEmissive: 0x7d0e5c, atomEmissive: 0x7d0e5c,
+    atomBrightEmissive: 0xd6479e, atomSideEmissive: 0x74195c, bondEmissive: 0x74195c,
+    cage: 0xd6479e, glow: 0xd6479e, line: 0xd6479e,
   },
 };
 
@@ -3521,7 +3269,10 @@ function frame() {
     n.mesh.scale.setScalar(1 + n.hoverT * 0.5);
 
     if (n.glow) {
-      n.glow.material.opacity = 0.42 + n.hoverT * 0.35;
+      // base matches the 0.22 resting opacity set at creation (see
+      // makeMoleculeGroup) — this per-frame update only adds the hover boost
+      // on top of that, so it can't drift back up to the old 0.42 value.
+      n.glow.material.opacity = 0.22 + n.hoverT * 0.35;
     }
 
     const worldPos = new THREE.Vector3();
@@ -3543,11 +3294,19 @@ function frame() {
   renderer.render(scene, camera);
 }
 
+var sceneToggleBtn = document.getElementById("molSceneToggle");
+function updateToggleUI(running){
+  if (!sceneToggleBtn) return;
+  sceneToggleBtn.classList.toggle("is-playing", running);
+  sceneToggleBtn.setAttribute("aria-label", running ? "Stop molecule animation" : "Play molecule animation");
+}
+
 function startScene(){
   if (sceneRunning) return;
   sceneRunning = true;
   handleResize();
   frame();
+  updateToggleUI(true);
 }
 function stopScene(){
   if (!sceneRunning) return;
@@ -3558,15 +3317,39 @@ function stopScene(){
   }
   showTooltip(null);
   lastShownNode = null;
+  updateToggleUI(false);
+}
+
+// Manual stop button: the scene still auto-plays on scroll-into-view (see
+// the IntersectionObserver below), but a visitor can explicitly stop it —
+// this real render loop is meaningful GPU/CPU/RAM cost while it runs, and
+// not everyone wants it running just because they scrolled past. Once
+// stopped by hand, scrolling away and back won't silently restart it; the
+// visitor has to tap Play again to signal they actually want it running.
+var userPausedScene = false;
+if (sceneToggleBtn) {
+  sceneToggleBtn.addEventListener("click", function(){
+    if (sceneRunning) {
+      userPausedScene = true;
+      stopScene();
+    } else {
+      userPausedScene = false;
+      startScene();
+    }
+  });
 }
 
 // only render while the section is actually in the viewport — pause on
-// leave (GPU/battery), resume on enter, without resetting scene state.
+// leave (GPU/battery), resume on enter (unless the visitor manually
+// stopped it — see userPausedScene above), without resetting scene state.
 if (window.IntersectionObserver) {
   var io = new IntersectionObserver(function(entries){
     entries.forEach(function(entry){
-      if (entry.isIntersecting) startScene();
-      else stopScene();
+      if (entry.isIntersecting) {
+        if (!userPausedScene) startScene();
+      } else {
+        stopScene();
+      }
     });
   }, { threshold: 0.05 });
   io.observe(sectionEl);
@@ -3597,7 +3380,14 @@ import * as THREE from "three";
 const bgCanvas = document.getElementById("bgParticlesCanvas");
 const reduceMotion = window.matchMedia &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const isNarrow = window.innerWidth <= 900;
+// Width alone misses touch tablets/phones held in landscape (viewport can
+// exceed 900px there); a coarse pointer / no-hover device is the real
+// signal that "mouse-reactive" doesn't apply and this layer should be off
+// entirely (background particles are desktop-only, per design decision —
+// there's no mouse to react to, and it's pure GPU/battery cost on mobile).
+const isTouchDevice = window.matchMedia &&
+  window.matchMedia("(hover: none), (pointer: coarse)").matches;
+const isNarrow = window.innerWidth <= 900 || isTouchDevice;
 
 if (bgCanvas && !reduceMotion && !isNarrow && window.WebGLRenderingContext) {
 
@@ -3662,10 +3452,10 @@ const particleMat = new THREE.PointsMaterial({
 const particles = new THREE.Points(particleGeo, particleMat);
 scene.add(particles);
 
-/* Same accent hexes as MOLECULE_ACCENT.{him,her}.particle in the Explore
-   the Molecules module, kept in sync via setGender() below. */
+/* Same (now-muted) accent hexes as MOLECULE_ACCENT.{him,her}.particle in
+   the Explore the Molecules module, kept in sync via setGender() below. */
 function applyBgParticleTheme(isHer) {
-  particleMat.color.setHex(isHer ? 0xffb3f2 : 0x8fe9f5);
+  particleMat.color.setHex(isHer ? 0xe6a8cf : 0x9fd9de);
 }
 window.__pepzApplyBgParticleTheme = applyBgParticleTheme;
 applyBgParticleTheme(document.documentElement.classList.contains("theme-her"));
