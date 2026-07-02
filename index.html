@@ -157,8 +157,13 @@
   /* ---------- Mobile hamburger + drawer ----------
      Hidden entirely above 900px (see the shared mobile media query at the
      bottom of this stylesheet), so on desktop/tablet the existing
-     accountBtn/bookConsultBtn/side-nav keep working exactly as before. */
-  .hamburger-btn{ display:none; }
+     accountBtn/bookConsultBtn/side-nav keep working exactly as before.
+     Selector is ".header-actions .hamburger-btn" (not just ".hamburger-btn")
+     on purpose: the base ".icon-btn{display:flex}" rule further down the
+     stylesheet has equal specificity, so source order would otherwise let
+     it win and show the hamburger on desktop too — the extra ancestor
+     class here outranks it regardless of order. */
+  .header-actions .hamburger-btn{ display:none; }
   .mobile-nav-drawer{
     display:none;
     position:fixed; inset:0; z-index:250;
@@ -214,8 +219,8 @@
      Button states approximated from real BOOK CONSULTATION styling — exact Figma
      BUTTONS frame (node 35:274) states pending Figma quota reset. .btn-primary
      below is the Figma-verified ground truth (confirmed real data from an earlier
-     pull); .btn-outline, .icon-btn, and the circular icon-buttons (.modal-close,
-     .row-arrow, .play-btn) are aligned to the same hover-lift /
+     pull); .btn-outline, .icon-btn, and the circular icon-buttons (.goal-plus,
+     .modal-close, .row-arrow, .play-btn) are aligned to the same hover-lift /
      active-press language so every button on the site behaves consistently:
        - static:            base style below
        - hover:             brighter glow + slight lift (translateY(-1px))
@@ -468,21 +473,26 @@
     50%{transform:translateX(-50%) translateY(8px);}
   }
 
-  /* ---------- ONE MISSION ---------- */
+  /* ---------- ONE MISSION ----------
+     Two parallel card systems live in the markup: .mission-cards-desktop
+     (the original click-to-expand FLIP cards, unchanged) and
+     .mission-cards-mobile (the newer static landscape cards). Only one is
+     ever visible at a time — desktop by default, mobile swapped in at
+     max-width:900px (see that media query) — rather than one layout trying
+     to serve both. */
   #one-mission{
     /* base layer now transparent — this section's gradient is the one that
        got promoted to the global #siteGradientBg layer (see "GLOBAL
        AMBIENT BACKGROUND" near the top of this stylesheet), so it no
        longer needs its own local copy. */
     background:transparent;
-    /* No longer forced to exactly one viewport (that was only needed for
-       the old horizontal-scroll card row) — the cards below are a plain
-       static vertical stack, so the section just sizes to its content with
-       a sensible floor. */
+    padding-top:96px;
+    padding-left:40px;
+    padding-right:40px;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
     min-height:100vh;
-    height:auto;
-    padding:160px 40px 100px;
-    display:block;
   }
   .mission-bg{
     /* the gradient this used to paint locally now comes from the global
@@ -498,20 +508,271 @@
     max-width:1400px;
     margin:0 auto;
     width:100%;
+    padding:64px 0 40px;
+    display:flex;
+    flex-direction:column;
+    flex:1;
+    min-height:0;
   }
   .mission-heading{
     font-weight:900;
     font-size:clamp(32px,5.5vw,96px);
     text-transform:uppercase;
     line-height:1.05;
-    margin:0 0 40px;
+    margin:0 0 8px;
   }
   .mission-heading .accent{color:var(--brand);animation:glow-pulse-text 3s ease-in-out infinite;}
 
-  /* ---- Static landscape mission cards ----
-     Replaces the old click-to-expand vertical cards: each goal is a single
-     wide, static card with the summary already on it — no interaction, no
-     separate detail view to open. */
+  /* ---- Desktop: original click-to-expand FLIP cards ---- */
+  .mission-cards-desktop{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+    min-height:0;
+  }
+  .mission-hint-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin:24px 0 40px;
+  }
+  .mission-hint{
+    font-size:16px;
+    font-weight:300;
+    text-transform:uppercase;
+    color:var(--brand);
+    white-space:nowrap;
+  }
+  .mission-hint-line{
+    flex:1;
+    height:1px;
+    background:linear-gradient(90deg, var(--brand), rgba(var(--brand-glow-rgb),0.15));
+    max-width:640px;
+  }
+  .card-row-wrap{
+    position:relative;
+    /* break out of #one-mission's 40px side padding so the row runs all the
+       way to the true screen edge on typical viewport widths — matches the
+       Figma layout where the 4th card is visibly cut off at the viewport
+       edge with the arrow sitting right on that edge, rather than looking
+       boxed-in/contained. On very wide screens this is capped by
+       .mission-inner's max-width, same as .products-inner. */
+    margin-right:-40px;
+    flex:1;
+    min-height:0;
+  }
+  .card-row{
+    display:flex;
+    gap:24px;
+    overflow-x:auto;
+    scroll-behavior:smooth;
+    scrollbar-width:none;
+    /* setting overflow-x:auto forces overflow-y to compute as 'auto' too
+       (CSS overflow spec), so this row clips vertically at its own box —
+       needs enough top padding to fit the :hover translateY(-6px) lift plus
+       the glow-pulse-border box-shadow bleed, or the card's top edge gets
+       visibly clipped/"disappears" on hover. 4px was not enough. */
+    padding:24px 56px 24px 8px;
+    position:relative;
+    height:100%;
+  }
+  .card-row::-webkit-scrollbar{display:none;}
+
+  /* ---- FLIP shared-element card expansion ----
+     .goal-card is the single element that grows from its grid slot into the
+     full detail view. During the animation it's promoted to position:fixed
+     with an explicit top/left/width/height (the FIRST rect), then on the next
+     frame those values are transitioned to the LAST rect (full viewport-ish
+     panel). The other cards get .card-collapsing to fade/shrink out of the way. */
+  .goal-card{
+    flex:0 0 min(460px,60vw);
+    width:min(460px,60vw);
+    height:100%;
+    border-radius:25px;
+    border:1px solid var(--brand);
+    background:linear-gradient(180deg, var(--card) 0%, var(--bg) 100%);
+    position:relative;
+    padding:32px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    cursor:default;
+    animation:glow-pulse-border 3.4s ease-in-out infinite;
+    will-change:transform;
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .goal-card:not(.card-flipping):hover{
+    transform:translateY(-6px);
+    box-shadow:0 14px 44px rgba(var(--brand-glow-rgb),0.2);
+  }
+  .goal-card.card-flipping{ animation:none; }
+  .goal-card.card-flipping{
+    position:fixed;
+    z-index:60;
+    top:0;left:0;
+    transition:top .5s cubic-bezier(.16,.84,.44,1),
+               left .5s cubic-bezier(.16,.84,.44,1),
+               width .5s cubic-bezier(.16,.84,.44,1),
+               height .5s cubic-bezier(.16,.84,.44,1),
+               border-radius .5s cubic-bezier(.16,.84,.44,1),
+               padding .5s cubic-bezier(.16,.84,.44,1),
+               justify-content 0s;
+    box-shadow:0 30px 80px rgba(0,0,0,0.55);
+  }
+  .goal-card.card-expanded{
+    justify-content:flex-start;
+    align-items:flex-start;
+    text-align:left;
+    overflow-y:auto;
+    z-index:61;
+    padding:64px 96px;
+    border-radius:0;
+  }
+  .goal-card.card-collapsing{
+    transition:opacity .35s ease, transform .35s ease;
+    opacity:0;
+    transform:scale(.92);
+    pointer-events:none;
+  }
+  /* invisible flex-sized stand-in left in the card's original grid slot while
+     it's expanded, so the row keeps its natural layout/scroll width and
+     collapse always has an accurate, up-to-date target rect to animate back
+     to (robust against page scroll / resize while expanded). */
+  .card-placeholder{
+    visibility:hidden;
+    pointer-events:none;
+    animation:none;
+  }
+  /* single contextual arrow while a card is expanded, cycles to the next
+     goal's detail view without returning to the grid first — mirrors the
+     row-arrow motif used for the collapsed card row. */
+  .expanded-arrow{
+    position:fixed;
+    top:50%;right:40px;
+    left:auto;
+    transform:translateY(-50%);
+    z-index:65;
+  }
+  .expanded-arrow.hidden{opacity:0;pointer-events:none;}
+  .goal-card h3{
+    font-weight:900;
+    font-size:clamp(28px,3.2vw,48px);
+    color:var(--brand);
+    text-transform:uppercase;
+    line-height:1.18;
+    margin:0;
+    transition:font-size .4s ease, margin .4s ease;
+  }
+  .goal-card.card-expanded h3{
+    font-size:clamp(28px,3.5vw,48px);
+    margin:0 0 32px;
+    text-align:left;
+  }
+  .goal-plus{
+    position:absolute;
+    right:32px;
+    bottom:32px;
+    width:46px;height:46px;
+    border-radius:50%;
+    border:1.5px solid var(--brand);
+    background:transparent;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    color:var(--brand);
+    transition:transform .35s cubic-bezier(.16,.84,.44,1), background .2s ease, top .4s ease, bottom .4s ease, left .4s ease, right .4s ease;
+    animation:glow-pulse-icon 3s ease-in-out infinite;
+  }
+  .goal-plus:hover{background:rgba(var(--brand-glow-rgb),0.1);box-shadow:0 0 18px rgba(var(--brand-glow-rgb),0.5);}
+  .goal-plus:active{animation:btn-glow-pop-outline .4s ease-out;}
+  .goal-plus:active svg{transform:scale(.9);}
+  .goal-plus svg{width:20px;height:20px;transition:transform .35s cubic-bezier(.16,.84,.44,1);}
+  .goal-plus.is-close svg{transform:rotate(45deg);}
+  .goal-plus.is-close:active svg{transform:rotate(45deg) scale(.9);}
+  .goal-card.card-expanded .goal-plus{
+    left:auto;
+    bottom:auto;
+    top:40px;
+    right:40px;
+  }
+
+  .row-arrow{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:108px;height:108px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(var(--brand-glow-rgb),0.9) 0%, rgba(var(--brand-glow-rgb),0.75) 60%, rgba(var(--brand-glow-rgb),0.55) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    border:none;
+    z-index:5;
+    transition:right .4s ease, left .4s ease, opacity .3s ease;
+    animation:glow-pulse-shadow 3s ease-in-out infinite;
+  }
+  /* card-row-wrap's right edge is now the true viewport edge (see
+     margin-right:-40px above), so inset the arrow from THAT edge rather
+     than overhanging off-screen. */
+  .row-arrow.arrow-right{right:20px;left:auto;}
+  .row-arrow.arrow-left{left:20px;right:auto;}
+  .row-arrow svg{width:36px;height:36px;color:#000;transition:transform .15s ease;}
+  /* the chevron SVG itself always points right — flip it 180deg when the
+     button is pinned to the left edge, so it actually points left (was
+     previously just repositioned without flipping, so it kept pointing the
+     wrong way). */
+  .row-arrow.arrow-left svg{transform:rotate(180deg);}
+  .row-arrow.hidden{opacity:0;pointer-events:none;}
+  .row-arrow:hover{filter:brightness(1.1);}
+  .row-arrow:active{animation:btn-glow-pop .4s ease-out;}
+  .row-arrow:active svg{transform:scale(.9);}
+  .row-arrow.arrow-left:active svg{transform:rotate(180deg) scale(.9);}
+
+  /* Detail content lives inside the card itself (shared element), hidden
+     until the card is expanded, so the SAME node grows rather than a
+     separate panel cross-fading in. */
+  .goal-card-detail{
+    display:none;
+    flex-direction:column;
+    flex:1 1 auto;
+    min-height:0;
+  }
+  .goal-card.card-expanded .goal-card-detail{
+    display:flex;
+  }
+  .goal-card.card-expanded .goal-card-summary{
+    display:none;
+  }
+  .detail-body{
+    font-weight:300;
+    font-size:clamp(15px,1.6vw,26px);
+    line-height:1.5;
+    color:var(--fg);
+    max-width:1078px;
+    opacity:0;
+    transition:opacity .3s ease .15s;
+  }
+  .goal-card.card-expanded .detail-body{opacity:1;}
+  .detail-body b{font-weight:800;}
+  .detail-body .accent-text{color:var(--brand);font-weight:600;}
+  .detail-actions{
+    margin-top:auto;
+    padding-top:32px;
+    opacity:0;
+    transition:opacity .3s ease .2s;
+  }
+  .goal-card.card-expanded .detail-actions{opacity:1;}
+
+  /* ---- Mobile: static landscape mission cards ----
+     Hidden on desktop by default (see .mission-cards-mobile below); shown
+     in place of .mission-cards-desktop only at max-width:900px. Each goal
+     is a single wide, static card with the summary already on it — no
+     interaction, no separate detail view to open. */
+  .mission-cards-mobile{ display:none; }
   .mission-cards-stack{
     display:flex;
     flex-direction:column;
@@ -663,9 +924,18 @@
     position:absolute;
     inset:0;
     z-index:1;
-    touch-action:none;
+    /* Default lets a vertical touch-drag pass through as a page scroll —
+       important on phones since this canvas fills the whole section. Only
+       captured for drag-to-orbit while the scene is actually running (see
+       .scene-playing below, toggled by startScene/stopScene in the module
+       script) — while paused/stopped, touching the section should scroll
+       the page like anywhere else, not do nothing. */
+    touch-action:pan-y;
     width:100%;
     height:100%;
+  }
+  #explore-molecules.scene-playing canvas{
+    touch-action:none;
   }
   #explore-molecules #aura{
     position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none;
@@ -1510,14 +1780,29 @@
     /* Mobile header = Logo / theme switch / hamburger only. */
     #accountBtn, #bookConsultBtn{ display:none; }
     .header-actions{ gap:14px; }
-    .hamburger-btn{ display:flex; }
+    .header-actions .hamburger-btn{ display:flex; }
     .mobile-nav-drawer{ display:block; }
     /* Bump the two icon-buttons visitors are actually likely to tap on
        mobile up to the ~44px minimum touch target size (Apple HIG / Material
        guidance) — the base .icon-btn's 38px is fine as a mouse target on
        desktop but is tight for a thumb. */
     .hamburger-btn, .mol-scene-toggle{ width:44px; height:44px; }
-    #one-mission{padding:140px 20px 80px;}
+    /* Gender switch shrinks so Logo / switch / hamburger all fit comfortably
+       in the mobile header without crowding. */
+    .gender-switch{ gap:2px; padding:3px; border-radius:11px; }
+    .gender-switch-btn{ padding:6px 10px; font-size:9px; border-radius:8px; }
+    /* Swap card systems: original desktop FLIP cards out, static landscape
+       cards in — and let the section size to content again instead of the
+       desktop's fixed 100vh (needed for the old horizontal-scroll row, not
+       for a plain vertical stack). */
+    #one-mission{
+      height:auto;
+      min-height:100vh;
+      display:block;
+      padding:140px 20px 80px;
+    }
+    .mission-cards-desktop{ display:none; }
+    .mission-cards-mobile{ display:block; }
     .mission-card{
       flex-direction:column;
       align-items:flex-start;
@@ -1664,26 +1949,110 @@
 
       <h2 class="mission-heading"><span class="accent">ONE</span> MISSION -<br>4 <span class="accent">GOALS</span></h2>
 
-      <!-- Static landscape cards — info is on the card itself, no expand
-           interaction, no separate detail view (per request: no "+", no
-           "View Products" here). -->
-      <div class="mission-cards-stack">
-        <article class="mission-card">
-          <h3 class="mission-card-title">MUSCLE<br>RECOVERY</h3>
-          <p class="mission-card-body">Peptide-based recovery protocols accelerate the body's own repair signaling rather than masking pain. <span class="accent-text">BPC-157 and TB-500</span> speed tissue regeneration after strains, tears, or surgery while calming inflammation. <b>Rehab that used to take months can compress into weeks.</b></p>
-        </article>
-        <article class="mission-card">
-          <h3 class="mission-card-title">LONGEVITY</h3>
-          <p class="mission-card-body">Longevity-focused peptides target the cellular machinery that determines how well the body keeps repairing itself. <span class="accent-text">NAD+ and Epitalon</span> restore mitochondrial energy production and support the deep sleep where most regeneration happens. <b>The goal isn't slowing a clock — it's a longer, more resilient healthspan.</b></p>
-        </article>
-        <article class="mission-card">
-          <h3 class="mission-card-title">BEAUTY</h3>
-          <p class="mission-card-body">Beauty-focused peptides replace signals the skin naturally stops producing with age, rather than masking the surface effects. <span class="accent-text">GHK-Cu</span> rebuilds the dermal matrix from below, restoring thickness and elasticity while supporting denser hair growth. <b>Results compound over weeks rather than fading once you stop.</b></p>
-        </article>
-        <article class="mission-card">
-          <h3 class="mission-card-title">FITNESS</h3>
-          <p class="mission-card-body">Fitness-focused peptides amplify signals the body already uses to build and maintain lean tissue. <span class="accent-text">CJC-1295 and Ipamorelin</span> nudge natural GH release overnight, supporting lean muscle and faster recovery between sessions. <b>The effect compounds across training, recovery, and cognition.</b></p>
-        </article>
+      <!-- ============ DESKTOP: original click-to-expand FLIP cards ============
+           Unchanged from before the mobile redesign — hidden on mobile (see
+           .mission-cards-desktop in the max-width:900px query), where
+           .mission-cards-mobile below takes over instead. -->
+      <div class="mission-cards-desktop">
+        <div class="mission-hint-row">
+          <span class="mission-hint">click the '+' to learn more</span>
+          <span class="mission-hint-line"></span>
+        </div>
+
+        <!-- FLIP shared-element cards: each .goal-card IS the detail view —
+             clicking '+' grows this same element via captured getBoundingClientRect
+             (FIRST) -> class toggle (LAST) -> inverse transform animated to identity.
+             See card-flip JS below. No separate detail panel element. -->
+        <div class="card-row-wrap">
+          <div class="card-row" id="cardRow">
+            <article class="goal-card" data-goal="muscle-recovery">
+              <div class="goal-card-summary">
+                <h3>MUSCLE<br>RECOVERY</h3>
+              </div>
+              <div class="goal-card-detail">
+                <h3>MUSCLE RECOVERY</h3>
+                <p class="detail-body">Peptide-based recovery protocols work by accelerating the body's own repair signaling rather than masking pain. <span class="accent-text">BPC-157 and TB-500</span> promote angiogenesis (new blood vessel growth) into damaged tendons, ligaments, and gut tissue, areas that are naturally slow to heal due to poor blood supply. This translates to faster tissue regeneration after strains, tears, or surgery, while also calming systemic inflammation and supporting gut lining integrity, which is often compromised by intense training. <b>The result is a shorter window between injury and return to full output: rehab that used to take months can compress into weeks, letting athletes train harder, recover cleaner, and stay consistent without the setbacks that chronic micro-injuries usually cause.</b></p>
+                <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+              </div>
+              <button class="goal-plus" data-goal="muscle-recovery" aria-label="Expand Muscle Recovery">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </article>
+            <article class="goal-card" data-goal="longevity">
+              <div class="goal-card-summary">
+                <h3>LONGEVITY</h3>
+              </div>
+              <div class="goal-card-detail">
+                <h3>LONGEVITY</h3>
+                <p class="detail-body">Longevity-focused peptides work upstream of the visible signs of aging, targeting the cellular machinery that determines how well — and how long — the body keeps repairing itself. Compounds like <span class="accent-text">NAD+ and Epitalon</span> restore mitochondrial energy production and support circadian rhythm, helping cells generate the fuel they need for repair while deepening the restorative sleep where most regeneration happens. Others reinforce immune resilience and cellular turnover, addressing the slow breakdown in repair efficiency that drives age-related decline rather than just its symptoms. <b>Used together, these protocols aren't about slowing a clock — they're about restoring the cellular conditions for a longer, more resilient healthspan.</b></p>
+                <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+              </div>
+              <button class="goal-plus" data-goal="longevity" aria-label="Expand Longevity">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </article>
+            <article class="goal-card" data-goal="beauty">
+              <div class="goal-card-summary">
+                <h3>BEAUTY</h3>
+              </div>
+              <div class="goal-card-detail">
+                <h3>BEAUTY</h3>
+                <p class="detail-body">Beauty-focused peptides work by replacing signals the skin naturally stops producing with age, rather than masking the surface effects of that decline. <span class="accent-text">GHK-Cu</span>, a copper-binding peptide the body produces abundantly in youth and far less by the thirties, rebuilds the dermal matrix from below — stimulating collagen, elastin, and glycosaminoglycan synthesis to restore thickness and elasticity while accelerating repair of photodamage and supporting denser hair growth at the follicle. <b>Rather than sitting on top of the skin like a topical treatment, these peptides work systemically and topically to repair the underlying structure, producing results that compound over weeks rather than fading the moment you stop using them.</b></p>
+                <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+              </div>
+              <button class="goal-plus" data-goal="beauty" aria-label="Expand Beauty">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </article>
+            <article class="goal-card" data-goal="fitness">
+              <div class="goal-card-summary">
+                <h3>FITNESS</h3>
+              </div>
+              <div class="goal-card-detail">
+                <h3>FITNESS</h3>
+                <p class="detail-body">Fitness-focused peptides work by amplifying signals the body already uses to build and maintain lean tissue, rather than introducing something foreign to it. Growth-hormone secretagogues like <span class="accent-text">CJC-1295 and Ipamorelin</span> nudge the pituitary to pulse natural GH overnight, supporting lean muscle mass and shortening recovery windows between sessions, while mitochondrial peptides like MOTS-C boost exercise capacity and metabolic efficiency at the cellular level. <b>The effect compounds across training, recovery, and cognition — deeper sleep, leaner body composition, faster bounce-back from hard sessions, and a sharper edge for athletes, lifters, and anyone pushing to optimize physical output.</b></p>
+                <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+              </div>
+              <button class="goal-plus" data-goal="fitness" aria-label="Expand Fitness">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </article>
+          </div>
+
+          <button class="row-arrow arrow-right" id="rowArrow" aria-label="Scroll cards">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+
+        <!-- visible only while a card is expanded fullscreen: advances to the next goal's detail view -->
+        <button class="row-arrow expanded-arrow hidden" id="expandedArrow" aria-label="Next goal">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <!-- ============ MOBILE: static landscape cards ============
+           Info is on the card itself, no expand interaction, no separate
+           detail view — swapped in for .mission-cards-desktop only at
+           max-width:900px. -->
+      <div class="mission-cards-mobile">
+        <div class="mission-cards-stack">
+          <article class="mission-card">
+            <h3 class="mission-card-title">MUSCLE<br>RECOVERY</h3>
+            <p class="mission-card-body">Peptide-based recovery protocols accelerate the body's own repair signaling rather than masking pain. <span class="accent-text">BPC-157 and TB-500</span> speed tissue regeneration after strains, tears, or surgery while calming inflammation. <b>Rehab that used to take months can compress into weeks.</b></p>
+          </article>
+          <article class="mission-card">
+            <h3 class="mission-card-title">LONGEVITY</h3>
+            <p class="mission-card-body">Longevity-focused peptides target the cellular machinery that determines how well the body keeps repairing itself. <span class="accent-text">NAD+ and Epitalon</span> restore mitochondrial energy production and support the deep sleep where most regeneration happens. <b>The goal isn't slowing a clock — it's a longer, more resilient healthspan.</b></p>
+          </article>
+          <article class="mission-card">
+            <h3 class="mission-card-title">BEAUTY</h3>
+            <p class="mission-card-body">Beauty-focused peptides replace signals the skin naturally stops producing with age, rather than masking the surface effects. <span class="accent-text">GHK-Cu</span> rebuilds the dermal matrix from below, restoring thickness and elasticity while supporting denser hair growth. <b>Results compound over weeks rather than fading once you stop.</b></p>
+          </article>
+          <article class="mission-card">
+            <h3 class="mission-card-title">FITNESS</h3>
+            <p class="mission-card-body">Fitness-focused peptides amplify signals the body already uses to build and maintain lean tissue. <span class="accent-text">CJC-1295 and Ipamorelin</span> nudge natural GH release overnight, supporting lean muscle and faster recovery between sessions. <b>The effect compounds across training, recovery, and cognition.</b></p>
+          </article>
+        </div>
       </div>
 
     </div>
@@ -2031,6 +2400,208 @@
   }, {threshold:0.5});
   sections.forEach(function(s){ observer.observe(s); });
 
+  /* ---------------- One Mission (desktop): card row arrow ----------------
+     Only present in .mission-cards-desktop, which only exists/is visible
+     above 900px — cardRow/rowArrow etc. are still always in the DOM (the
+     mobile media query only hides them with CSS), so this wiring is safe
+     to run unconditionally on every viewport size. */
+  var cardRow = document.getElementById('cardRow');
+  var rowArrow = document.getElementById('rowArrow');
+
+  function maxScroll(){
+    return cardRow.scrollWidth - cardRow.clientWidth;
+  }
+
+  function updateArrow(){
+    var max = maxScroll();
+    if (max <= 2){
+      rowArrow.classList.add('hidden');
+      return;
+    }
+    rowArrow.classList.remove('hidden');
+    var atEnd = cardRow.scrollLeft >= max - 2;
+    if (atEnd){
+      rowArrow.classList.remove('arrow-right');
+      rowArrow.classList.add('arrow-left');
+    } else {
+      rowArrow.classList.remove('arrow-left');
+      rowArrow.classList.add('arrow-right');
+    }
+  }
+
+  rowArrow.addEventListener('click', function(){
+    var max = maxScroll();
+    var atEnd = cardRow.scrollLeft >= max - 2;
+    cardRow.scrollTo({
+      left: atEnd ? 0 : max,
+      behavior:'smooth'
+    });
+  });
+  cardRow.addEventListener('scroll', updateArrow, {passive:true});
+  window.addEventListener('resize', updateArrow);
+  updateArrow();
+
+  /* ---------------- One Mission (desktop): FLIP shared-element card expand/collapse ----------------
+     Same card element grows from its grid slot into the full detail view:
+       1. FIRST: capture the clicked card's current rect (its grid position/size).
+       2. Toggle state classes (card-expanded on the clicked card; card-collapsing
+          on the other three so they fade/shrink out of the way).
+       3. LAST: capture the new rect after layout settles.
+       4. Apply the FIRST rect as fixed top/left/width/height (so visually nothing
+          has moved yet), force reflow, then transition those values to the LAST
+          rect -> reads as one continuous growth, not two elements swapping.
+     Reversing ("x") runs the same FLIP in the opposite direction back to the
+     card's original grid box, then removes the fixed positioning entirely. */
+  var goalCards = Array.prototype.slice.call(document.querySelectorAll('.goal-card'));
+  var expandedCard = null;
+  var flipAnimating = false;
+  var placeholders = new WeakMap(); // card -> its in-grid stand-in element
+  var expandedArrowBtn = document.getElementById('expandedArrow');
+  var FLIP_MS = 520; // must be >= the CSS transition duration used below
+
+  function clearInlineRect(card){
+    card.style.top = '';
+    card.style.left = '';
+    card.style.width = '';
+    card.style.height = '';
+  }
+
+  function fullscreenRect(){
+    // fill the whole screen but align under the fixed header, not behind it
+    var header = document.querySelector('.site-header');
+    var headerH = header ? header.offsetHeight : 0;
+    return { top:headerH, left:0, width:window.innerWidth, height:window.innerHeight - headerH };
+  }
+
+  function animateBox(card, from, to, onDone){
+    card.style.transition = 'none';
+    card.style.top = from.top + 'px';
+    card.style.left = from.left + 'px';
+    card.style.width = from.width + 'px';
+    card.style.height = from.height + 'px';
+    void card.offsetWidth; // force reflow so FROM is committed before animating
+    card.style.transition = '';
+
+    var done = false;
+    function finish(){
+      if (done) return;
+      done = true;
+      card.removeEventListener('transitionend', onEnd);
+      clearTimeout(fallback);
+      onDone();
+    }
+    function onEnd(e){
+      if (e.target === card && e.propertyName === 'width') finish();
+    }
+    card.addEventListener('transitionend', onEnd);
+    // safety net: some browsers/layouts can skip firing transitionend if a
+    // value happens not to change — never let the UI get permanently stuck.
+    var fallback = setTimeout(finish, FLIP_MS + 150);
+
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        card.style.top = to.top + 'px';
+        card.style.left = to.left + 'px';
+        card.style.width = to.width + 'px';
+        card.style.height = to.height + 'px';
+      });
+    });
+  }
+
+  function expandCard(card){
+    if (flipAnimating || expandedCard) return;
+    flipAnimating = true;
+
+    var first = card.getBoundingClientRect();
+
+    // leave an invisible same-size stand-in in the grid so the row's layout
+    // and scroll width don't collapse while the real card is pulled out to
+    // position:fixed — this is also what collapse measures its target from.
+    var placeholder = document.createElement('div');
+    placeholder.className = 'goal-card card-placeholder';
+    placeholder.setAttribute('aria-hidden', 'true');
+    card.parentNode.insertBefore(placeholder, card.nextSibling);
+    placeholders.set(card, placeholder);
+
+    goalCards.forEach(function(c){
+      if (c === card){
+        c.classList.add('card-expanded');
+      } else {
+        c.classList.add('card-collapsing');
+      }
+    });
+    var plus = card.querySelector('.goal-plus');
+    if (plus) plus.classList.add('is-close');
+
+    card.classList.add('card-flipping');
+    document.body.style.overflow = 'hidden'; // lock background scroll while expanded
+
+    animateBox(card, first, fullscreenRect(), function(){
+      flipAnimating = false;
+      expandedCard = card;
+      expandedArrowBtn.classList.remove('hidden');
+    });
+  }
+
+  function collapseCard(card){
+    if (flipAnimating || expandedCard !== card) return;
+    flipAnimating = true;
+    expandedArrowBtn.classList.add('hidden');
+
+    var placeholder = placeholders.get(card);
+    var from = card.getBoundingClientRect();
+    // the placeholder reflects exactly where this card belongs right now
+    // (accounts for any row-scroll/resize that happened while expanded)
+    var to = placeholder ? placeholder.getBoundingClientRect() : first_fallback();
+    function first_fallback(){ return card.getBoundingClientRect(); }
+
+    card.classList.remove('card-expanded');
+    goalCards.forEach(function(c){ c.classList.remove('card-collapsing'); });
+    var plus = card.querySelector('.goal-plus');
+    if (plus) plus.classList.remove('is-close');
+
+    animateBox(card, from, to, function(){
+      card.classList.remove('card-flipping');
+      clearInlineRect(card);
+      if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+      placeholders.delete(card);
+      document.body.style.overflow = '';
+      flipAnimating = false;
+      expandedCard = null;
+    });
+  }
+
+  function expandOnly(card){
+    // used by next/prev cycling: same as expandCard but assumes we're
+    // already in a clean (all-collapsed) grid state.
+    expandCard(card);
+  }
+
+  document.querySelectorAll('.goal-plus').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var card = btn.closest('.goal-card');
+      if (!card) return;
+      if (card.classList.contains('card-expanded')){
+        collapseCard(card);
+      } else {
+        expandCard(card);
+      }
+    });
+  });
+
+  expandedArrowBtn.addEventListener('click', function(){
+    if (!expandedCard || flipAnimating) return;
+    var idx = goalCards.indexOf(expandedCard);
+    var next = goalCards[(idx + 1) % goalCards.length];
+    var current = expandedCard;
+    collapseCard(current);
+    // wait for the collapse FLIP to fully settle, then expand the next goal
+    setTimeout(function(){ expandOnly(next); }, FLIP_MS + 40);
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && expandedCard) collapseCard(expandedCard);
+  });
 
   /* ---------------- How It Works: real video playback ---------------- */
   var playBtn = document.getElementById('playBtn');
@@ -3307,6 +3878,9 @@ function startScene(){
   handleResize();
   frame();
   updateToggleUI(true);
+  // .scene-playing switches the canvas to touch-action:none (see CSS) so a
+  // touch-drag orbits the camera instead of scrolling the page.
+  sectionEl.classList.add("scene-playing");
 }
 function stopScene(){
   if (!sceneRunning) return;
@@ -3318,6 +3892,9 @@ function stopScene(){
   showTooltip(null);
   lastShownNode = null;
   updateToggleUI(false);
+  // Paused/stopped: hand touch back to the page so visitors can scroll
+  // straight through this section instead of the canvas eating the gesture.
+  sectionEl.classList.remove("scene-playing");
 }
 
 // Manual stop button: the scene still auto-plays on scroll-into-view (see
