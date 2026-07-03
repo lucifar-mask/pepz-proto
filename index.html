@@ -885,16 +885,25 @@
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
     gap:24px;
+    /* Cards grow independently on hover/reveal (see .evidence-card-reveal
+       below) instead of stretching every card in the row to match — the
+       default grid stretch behavior would otherwise force neighboring
+       cards to balloon to the same height as whichever one is expanded. */
+    align-items:start;
   }
   .evidence-card{
     position:relative;
-    min-height:220px;
     border-radius:20px;
     border:1px solid var(--brand);
     background:linear-gradient(180deg, var(--card) 0%, var(--bg) 100%);
     padding:28px 26px;
-    overflow:hidden;
     cursor:default;
+    transition:box-shadow .2s ease;
+  }
+  .evidence-card:hover,
+  .evidence-card:focus-within,
+  .evidence-card.is-revealed{
+    box-shadow:0 0 20px rgba(var(--brand-glow-rgb),0.18);
   }
   .evidence-card-name{
     font-weight:800;
@@ -929,35 +938,59 @@
   .evidence-badge-fda{background:var(--brand);color:var(--primary-fg);border:1px solid var(--brand);}
   html.theme-her .evidence-badge-fda{color:#ffffff;}
   .evidence-badge-qualifier{font-size:9px;font-weight:600;opacity:.85;}
+  /* Doubles as the mobile tap-to-reveal control (see JS: clicking it
+     toggles .is-revealed on the parent card) — on desktop it's just inert
+     hint text since hover already drives the reveal there, so it's reset
+     to look like plain text rather than a button and fades out once
+     hovering/focus has already revealed the card. On mobile (media query
+     below) it's re-styled to actually look tappable, and it does NOT fade
+     out when revealed there, since it's the only way to toggle back closed
+     on a touchscreen. */
   .evidence-card-hint{
-    position:absolute;
-    right:26px;bottom:22px;
+    display:block;
+    width:100%;
+    margin:16px 0 0;
+    padding:0;
+    background:none;
+    border:none;
+    font:inherit;
     font-size:10px;
     letter-spacing:.06em;
     text-transform:uppercase;
+    text-align:left;
     color:var(--muted-fg);
     opacity:.6;
-  }
-  .evidence-card-reveal{
-    position:absolute; inset:0;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    padding:26px;
-    background:rgba(var(--bg-rgb),0.92);
-    border:1px solid rgba(var(--brand-glow-rgb),0.45);
-    box-shadow:0 0 18px rgba(var(--brand-glow-rgb),0.15), inset 0 0 12px rgba(var(--brand-glow-rgb),0.05);
-    backdrop-filter:blur(6px);
-    -webkit-backdrop-filter:blur(6px);
-    border-radius:20px;
-    opacity:0;
-    pointer-events:none;
+    cursor:default;
     transition:opacity .2s ease;
   }
+  .evidence-card:hover .evidence-card-hint,
+  .evidence-card:focus-within .evidence-card-hint{
+    opacity:0;
+  }
+  /* Expands the CARD itself (max-height 0 -> a generous ceiling, real
+     content is always well under it) rather than overlaying a fixed-size
+     panel on top — a fixed-size overlay can never show more than its own
+     footprint fits, which was the original "cards too small" bug. Growing
+     the card is what actually fits all three lines of real content. */
+  .evidence-card-reveal{
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    margin-top:0;
+    padding:0 18px;
+    border-radius:14px;
+    border:1px solid transparent;
+    background:rgba(var(--brand-glow-rgb),0.06);
+    transition:max-height .4s ease, opacity .3s ease .05s, margin-top .4s ease, padding .4s ease, border-color .3s ease;
+  }
   .evidence-card:hover .evidence-card-reveal,
-  .evidence-card:focus-within .evidence-card-reveal{
+  .evidence-card:focus-within .evidence-card-reveal,
+  .evidence-card.is-revealed .evidence-card-reveal{
+    max-height:420px;
     opacity:1;
-    pointer-events:auto;
+    margin-top:16px;
+    padding:18px;
+    border-color:rgba(var(--brand-glow-rgb),0.35);
   }
   .evidence-card-claim{
     color:var(--fg);
@@ -1010,6 +1043,18 @@
     display:flex;
     flex-direction:column;
     gap:12px;
+  }
+  /* Only the new "Take the Quiz" step links anywhere (to #build-routine) —
+     same hover-lift language as the rest of the site's clickable elements,
+     kept subtle since the other three steps are purely informational. */
+  .hiw-step-link{
+    cursor:pointer;
+    transition:transform .15s ease;
+  }
+  .hiw-step-link:hover{ transform:translateY(-2px); }
+  .hiw-step-link:hover .hiw-step-icon{
+    background:rgba(var(--brand-glow-rgb),0.1);
+    box-shadow:0 0 14px rgba(var(--brand-glow-rgb),0.3);
   }
   .hiw-step-icon{
     width:40px;height:40px;
@@ -1390,6 +1435,7 @@
   .products-h1 span{
     color:var(--brand);
     transition:color .3s ease;
+    animation:glow-pulse-text 3.2s ease-in-out infinite;
   }
   .products-sub{
     font-weight:300;
@@ -1532,7 +1578,10 @@
      Learn More button — all at the exact offsets pulled from Figma. */
   .product-card{
     width:267px;
-    height:504px;
+    /* Was 504px — +56px gives the description zone (between the photo and
+       the divider) real breathing room; some product descriptions were
+       tight enough to risk clipping against overflow:hidden below. */
+    height:560px;
     border-radius:25px;
     border:1px solid var(--brand);
     background:linear-gradient(180deg, var(--card) 0%, var(--bg) 100%);
@@ -1616,12 +1665,12 @@
   }
   .product-divider{
     position:absolute;
-    left:44.5px;top:410.5px;width:179px;height:1px;
+    left:44.5px;top:466.5px;width:179px;height:1px;
     background:rgba(255,255,255,0.2);
   }
   .product-footer{
     position:absolute;
-    left:29px;top:429px;width:209px;
+    left:29px;top:485px;width:209px;
   }
   .product-footer .btn-outline{
     display:block;
@@ -1738,7 +1787,7 @@
   }
   .quiz-heading.size-lg{font-size:clamp(40px,7vw,96px);max-width:800px;}
   .quiz-heading.size-md{font-size:clamp(26px,5vw,64px);max-width:850px;}
-  .quiz-heading .accent{color:var(--brand);}
+  .quiz-heading .accent{color:var(--brand);animation:glow-pulse-text 3.1s ease-in-out infinite;}
 
   .quiz-multi-hint{
     color:var(--brand);
@@ -1943,7 +1992,7 @@
     line-height:1;
     margin:0 0 16px;
   }
-  .contact-heading .accent{color:var(--brand);}
+  .contact-heading .accent{color:var(--brand);animation:glow-pulse-text 3.4s ease-in-out infinite;}
   .contact-sub{
     font-size:clamp(16px,1.6vw,24px);
     font-weight:400;
@@ -2049,6 +2098,27 @@
     }
     .mission-cards-desktop{ display:none; }
     .mission-cards-mobile{ display:block; }
+    /* Desktop's .mission-heading margin (8px) only reads fine because
+       .mission-hint-row (24px/40px margins) sits between it and the cards
+       there — that hint row lives inside .mission-cards-desktop, which is
+       hidden on mobile, so without this the heading sits jammed right
+       against the static cards below it. */
+    .mission-heading{ margin-bottom:32px; }
+    /* Evidence cards: hover doesn't really exist on touch, so
+       .evidence-card-hint (already a <button>, see JS) becomes an actual
+       tappable control here instead of fading hint text — stays fully
+       visible/opaque while revealed too, since it's the only way to close
+       it again on a touchscreen. */
+    .evidence-card-hint{
+      cursor:pointer;
+      margin-top:18px;
+      padding:10px 16px;
+      border:1px solid var(--brand);
+      border-radius:100px;
+      color:var(--brand);
+      text-align:center;
+      opacity:1 !important;
+    }
     .mission-card{
       flex-direction:column;
       align-items:flex-start;
@@ -2058,31 +2128,44 @@
     .mission-card-title{ flex:none; }
     #productsView{padding:140px 20px 80px;}
     /* 2 columns, not 1 or 3, per request — the card itself switches from
-       the desktop's fixed 267x504 px frame to a fluid width + aspect-ratio
+       the desktop's fixed 267x560 px frame to a fluid width + aspect-ratio
        box below, with every absolutely-positioned child converted from
-       fixed px to % of the card so the whole design scales together
-       instead of overflowing/misaligning at a smaller size. */
+       fixed px to % of the card (recomputed against the new 560px height)
+       so the whole design scales together instead of overflowing/
+       misaligning at a smaller size. */
     .products-grid{grid-template-columns:repeat(2, 1fr); gap:14px 12px;}
     .product-card{
-      width:100%; height:auto; aspect-ratio:267/504;
+      width:100%; height:auto; aspect-ratio:267/560;
     }
     .product-photo{ width:100%; height:auto; aspect-ratio:1/1; }
     .product-quick-add{
       width:34px; height:34px; top:6px; right:6px;
     }
     .coming-soon-badge{
-      top:47.2%; width:96px; height:26px; font-size:9px;
+      top:42.5%; width:96px; height:26px; font-size:9px;
     }
-    .product-name{ left:10.9%; top:56.5%; font-size:14px; }
-    .product-desc{ left:10.9%; top:63%; width:78.3%; font-size:10px; line-height:1.4; }
-    .product-divider{ left:16.7%; top:80%; width:67%; }
-    .product-footer{ left:10.9%; top:84.5%; width:78.3%; }
+    .product-name{ left:10.9%; top:50.9%; font-size:14px; }
+    .product-desc{ left:10.9%; top:57.7%; width:78.3%; font-size:10px; line-height:1.4; }
+    .product-divider{ left:16.7%; top:83.3%; width:67%; }
+    .product-footer{ left:10.9%; top:86.6%; width:78.3%; }
     .product-footer .btn-outline{ padding:9px 10px; font-size:11px; }
     .filter-apply-btn{margin-left:0;}
     #build-routine{padding:120px 20px 60px;}
     #contact{padding:120px 20px 60px;}
     .contact-form-grid{grid-template-columns:1fr;}
     .contact-textarea{height:200px;}
+    /* Every section heading here uses clamp(floor, Nvw, ceiling) — at
+       typical phone widths (~375-430px) the vw term computes smaller than
+       the floor, so headings render at their floor value site-wide, which
+       read too small. Bumping just the floors (keeping the same vw/ceiling)
+       preserves the existing scaling curve above this breakpoint. */
+    .mission-heading{ font-size:clamp(40px,5.5vw,96px); }
+    .evidence-heading{ font-size:clamp(40px,5vw,72px); }
+    .hiw-inner h2{ font-size:clamp(40px,5vw,72px); }
+    .products-h1{ font-size:clamp(56px,9vw,96px); }
+    .contact-heading{ font-size:clamp(56px,7vw,96px); }
+    .quiz-heading.size-lg{ font-size:clamp(48px,7vw,96px); }
+    .quiz-heading.size-md{ font-size:clamp(34px,5vw,64px); }
   }
 </style>
 <!-- three.js (core only, via cdnjs) for the real Explore the Molecules orbit scene -->
@@ -2136,6 +2219,7 @@
   <a href="#how-it-works" class="nav-link" data-target="how-it-works">How It Works</a>
   <a href="#explore-molecules" class="nav-link" data-target="explore-molecules">Explore the Molecules</a>
   <a href="#productsView" class="nav-link" data-target="productsView">Our Products</a>
+  <a href="#evidence" class="nav-link" data-target="evidence">The Evidence</a>
   <a href="#build-routine" class="nav-link" data-target="build-routine">Build My Routine</a>
   <a href="#contact" class="nav-link" data-target="contact">Contact Us</a>
 </nav>
@@ -2155,6 +2239,7 @@
       <a href="#how-it-works" class="nav-link" data-target="how-it-works">How It Works</a>
       <a href="#explore-molecules" class="nav-link" data-target="explore-molecules">Explore the Molecules</a>
       <a href="#productsView" class="nav-link" data-target="productsView">Our Products</a>
+      <a href="#evidence" class="nav-link" data-target="evidence">The Evidence</a>
       <a href="#build-routine" class="nav-link" data-target="build-routine">Build My Routine</a>
       <a href="#contact" class="nav-link" data-target="contact">Contact Us</a>
     </nav>
@@ -2304,136 +2389,16 @@
     </div>
   </section>
 
-  <!-- ================= EVIDENCE =================
-       One card per compound, hover-to-reveal — reuses the opacity/backdrop-
-       blur/brand-glow mechanism from the Explore the Molecules tooltip
-       (#molTooltip) rather than inventing a new interaction. Content below
-       is sourced directly from the client's own research; do not alter the
-       substance of any claim, badge, or citation. -->
-  <section id="evidence">
-    <div class="evidence-inner">
-      <h2 class="evidence-heading">THE <span class="accent">EVIDENCE</span></h2>
-      <p class="evidence-sub">Hover a card to see the actual research behind each compound.</p>
-
-      <div class="evidence-grid">
-
-        <article class="evidence-card" tabindex="0">
-          <h3 class="evidence-card-name">BPC-157</h3>
-          <p class="evidence-card-category">Muscle Recovery</p>
-          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
-          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
-          <div class="evidence-card-reveal">
-            <p class="evidence-card-claim">Extensively studied in animal models for tissue and gut-lining repair; no completed human clinical trials have been published.</p>
-            <p class="evidence-card-takeaway">Promising in animal research — human evidence doesn't exist yet, so expectations should stay realistic.</p>
-            <p class="evidence-card-source">FDA Category 2 Bulk Drug Substances list (fda.gov), 2023</p>
-          </div>
-        </article>
-
-        <article class="evidence-card" tabindex="0">
-          <h3 class="evidence-card-name">TB-500</h3>
-          <p class="evidence-card-category">Muscle Recovery</p>
-          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
-          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
-          <div class="evidence-card-reveal">
-            <p class="evidence-card-claim">Animal and cell studies suggest pro-healing, anti-inflammatory activity; no completed human safety or efficacy trials exist.</p>
-            <p class="evidence-card-takeaway">Backed by lab and animal data, not yet by human trials.</p>
-            <p class="evidence-card-source">FDA Category 2 Bulk Drug Substances list (fda.gov); ClinicalTrials.gov</p>
-          </div>
-        </article>
-
-        <article class="evidence-card" tabindex="0">
-          <h3 class="evidence-card-name">Sermorelin</h3>
-          <p class="evidence-card-category">Longevity</p>
-          <span class="evidence-badge evidence-badge-fda">FDA-Approved<span class="evidence-badge-qualifier">(historical / different indication)</span></span>
-          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
-          <div class="evidence-card-reveal">
-            <p class="evidence-card-claim">Originally FDA-approved as Geref (1997) for diagnosing and treating growth hormone deficiency in children; the branded product was discontinued in 2008 for commercial, not safety, reasons.</p>
-            <p class="evidence-card-takeaway">A once FDA-approved GH therapy — today's adult longevity use is an off-label, compounded application.</p>
-            <p class="evidence-card-source">FDA Federal Register determination, GEREF (sermorelin acetate), 2013</p>
-          </div>
-        </article>
-
-        <article class="evidence-card" tabindex="0">
-          <h3 class="evidence-card-name">NAD+</h3>
-          <p class="evidence-card-category">Longevity</p>
-          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
-          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
-          <div class="evidence-card-reveal">
-            <p class="evidence-card-claim">No large randomized controlled human trials have established IV NAD+ therapy's anti-aging benefits; evidence so far is mechanistic and comes mainly from animal studies of NAD+ metabolism.</p>
-            <p class="evidence-card-takeaway">Early-stage research on a well-understood cellular pathway — human proof for anti-aging claims isn't there yet.</p>
-            <p class="evidence-card-source">Clinical Evidence for Targeting NAD Therapeutically, PMC, 2020</p>
-          </div>
-        </article>
-
-        <article class="evidence-card" tabindex="0">
-          <h3 class="evidence-card-name">PT-141</h3>
-          <p class="evidence-card-category">Longevity</p>
-          <span class="evidence-badge evidence-badge-fda">FDA-Approved</span>
-          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
-          <div class="evidence-card-reveal">
-            <p class="evidence-card-claim">FDA-approved as Vyleesi (2019) based on two Phase 3 RECONNECT trials, which showed significantly increased sexual desire and satisfying sexual events vs. placebo in premenopausal women with HSDD.</p>
-            <p class="evidence-card-takeaway">The only compound on this list backed by full FDA approval and Phase 3 trial data.</p>
-            <p class="evidence-card-source">FDA-approved prescribing information, VYLEESI (bremelanotide), Initial U.S. Approval 2019</p>
-          </div>
-        </article>
-
-        <article class="evidence-card" tabindex="0">
-          <h3 class="evidence-card-name">CJC-1295 / Ipamorelin</h3>
-          <p class="evidence-card-category">Fitness</p>
-          <span class="evidence-badge evidence-badge-clinical">Clinical Trial</span>
-          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
-          <div class="evidence-card-reveal">
-            <p class="evidence-card-claim">A 2006 study in the Journal of Clinical Endocrinology &amp; Metabolism found CJC-1295 produced sustained, dose-dependent increases in growth hormone and IGF-1 in healthy adults over several weeks.</p>
-            <p class="evidence-card-takeaway">Human data confirms the GH/IGF-1 effect; larger trials on muscle or fat outcomes are still lacking.</p>
-            <p class="evidence-card-source">Journal of Clinical Endocrinology &amp; Metabolism, 2006</p>
-          </div>
-        </article>
-
-        <article class="evidence-card" tabindex="0">
-          <h3 class="evidence-card-name">Tesamorelin</h3>
-          <p class="evidence-card-category">Fitness</p>
-          <span class="evidence-badge evidence-badge-fda">FDA-Approved<span class="evidence-badge-qualifier">(different indication)</span></span>
-          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
-          <div class="evidence-card-reveal">
-            <p class="evidence-card-claim">FDA-approved as Egrifta/Egrifta WR based on two trials in 816 HIV-positive adults, showing significant reduction in visceral abdominal fat via CT scan vs. placebo.</p>
-            <p class="evidence-card-takeaway">Real FDA approval and real trial data — though for HIV-related fat loss, not general fitness; use here is off-label.</p>
-            <p class="evidence-card-source">FDA-approved EGRIFTA prescribing information, accessdata.fda.gov</p>
-          </div>
-        </article>
-
-        <article class="evidence-card" tabindex="0">
-          <h3 class="evidence-card-name">MOTS-C</h3>
-          <p class="evidence-card-category">Fitness</p>
-          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
-          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
-          <div class="evidence-card-reveal">
-            <p class="evidence-card-claim">Discovered in 2015 as a mitochondria-derived "exercise mimetic" peptide; research remains mostly in animal and cell models, with human trials for metabolic conditions only just beginning.</p>
-            <p class="evidence-card-takeaway">One of the newest peptides in research — a promising mechanism, but human evidence is still in its infancy.</p>
-            <p class="evidence-card-source">MOTS-c: A promising mitochondrial-derived peptide for therapeutic exploitation, PMC, 2023</p>
-          </div>
-        </article>
-
-        <article class="evidence-card" tabindex="0">
-          <h3 class="evidence-card-name">GHK-Cu</h3>
-          <p class="evidence-card-category">Beauty</p>
-          <span class="evidence-badge evidence-badge-clinical">Clinical Trial</span>
-          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
-          <div class="evidence-card-reveal">
-            <p class="evidence-card-claim">A 12-week clinical trial in women with photoaged skin measured up to a 28% increase in collagen density with daily topical use.</p>
-            <p class="evidence-card-takeaway">One of the better-studied peptides on this list, with real human skin-trial data behind it.</p>
-            <p class="evidence-card-source">Pickart &amp; Margolina, Biomolecules, 2018 (systematic review of GHK-Cu clinical trials)</p>
-          </div>
-        </article>
-
-      </div>
-    </div>
-  </section>
-
   <!-- ================= HOW IT WORKS ================= -->
   <section id="how-it-works">
     <div class="hiw-inner">
       <h2>HOW IT <span class="accent">WORKS</span></h2>
       <div class="hiw-steps">
+        <a class="hiw-step hiw-step-link" href="#build-routine">
+          <span class="hiw-step-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M9 3.5h6M9 3.5v3.2L4.8 14a1.6 1.6 0 0 0 1.4 2.4h11.6a1.6 1.6 0 0 0 1.4-2.4L15 6.7V3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 12l2 2 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <h3>TAKE THE QUIZ</h3>
+          <p>Answer a few quick questions so we can point you toward the right routine before you talk to anyone.</p>
+        </a>
         <div class="hiw-step">
           <span class="hiw-step-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z" stroke="currentColor" stroke-width="1.6"/><path d="M4 20c1.4-3.8 4.6-6 8-6s6.6 2.2 8 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
           <h3>TALK TO A PROVIDER</h3>
@@ -2537,6 +2502,131 @@
        "results" screen exists in Figma — SEE RESULTS lives on the 100%
        calculating screen and opens #prototypeModal (a real matching engine
        is out of scope for this prototype). -->
+  <!-- ================= EVIDENCE =================
+       One card per compound, hover-to-reveal — reuses the opacity/backdrop-
+       blur/brand-glow mechanism from the Explore the Molecules tooltip
+       (#molTooltip) rather than inventing a new interaction. Content below
+       is sourced directly from the client's own research; do not alter the
+       substance of any claim, badge, or citation. -->
+  <section id="evidence">
+    <div class="evidence-inner">
+      <h2 class="evidence-heading">THE <span class="accent">EVIDENCE</span></h2>
+      <p class="evidence-sub">Hover a card to see the actual research behind each compound.</p>
+
+      <div class="evidence-grid">
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">BPC-157</h3>
+          <p class="evidence-card-category">Muscle Recovery</p>
+          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
+          <button type="button" class="evidence-card-hint">See the evidence &rarr;</button>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">Extensively studied in animal models for tissue and gut-lining repair; no completed human clinical trials have been published.</p>
+            <p class="evidence-card-takeaway">Promising in animal research — human evidence doesn't exist yet, so expectations should stay realistic.</p>
+            <p class="evidence-card-source">FDA Category 2 Bulk Drug Substances list (fda.gov), 2023</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">TB-500</h3>
+          <p class="evidence-card-category">Muscle Recovery</p>
+          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
+          <button type="button" class="evidence-card-hint">See the evidence &rarr;</button>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">Animal and cell studies suggest pro-healing, anti-inflammatory activity; no completed human safety or efficacy trials exist.</p>
+            <p class="evidence-card-takeaway">Backed by lab and animal data, not yet by human trials.</p>
+            <p class="evidence-card-source">FDA Category 2 Bulk Drug Substances list (fda.gov); ClinicalTrials.gov</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">Sermorelin</h3>
+          <p class="evidence-card-category">Longevity</p>
+          <span class="evidence-badge evidence-badge-fda">FDA-Approved<span class="evidence-badge-qualifier">(historical / different indication)</span></span>
+          <button type="button" class="evidence-card-hint">See the evidence &rarr;</button>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">Originally FDA-approved as Geref (1997) for diagnosing and treating growth hormone deficiency in children; the branded product was discontinued in 2008 for commercial, not safety, reasons.</p>
+            <p class="evidence-card-takeaway">A once FDA-approved GH therapy — today's adult longevity use is an off-label, compounded application.</p>
+            <p class="evidence-card-source">FDA Federal Register determination, GEREF (sermorelin acetate), 2013</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">NAD+</h3>
+          <p class="evidence-card-category">Longevity</p>
+          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
+          <button type="button" class="evidence-card-hint">See the evidence &rarr;</button>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">No large randomized controlled human trials have established IV NAD+ therapy's anti-aging benefits; evidence so far is mechanistic and comes mainly from animal studies of NAD+ metabolism.</p>
+            <p class="evidence-card-takeaway">Early-stage research on a well-understood cellular pathway — human proof for anti-aging claims isn't there yet.</p>
+            <p class="evidence-card-source">Clinical Evidence for Targeting NAD Therapeutically, PMC, 2020</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">PT-141</h3>
+          <p class="evidence-card-category">Longevity</p>
+          <span class="evidence-badge evidence-badge-fda">FDA-Approved</span>
+          <button type="button" class="evidence-card-hint">See the evidence &rarr;</button>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">FDA-approved as Vyleesi (2019) based on two Phase 3 RECONNECT trials, which showed significantly increased sexual desire and satisfying sexual events vs. placebo in premenopausal women with HSDD.</p>
+            <p class="evidence-card-takeaway">The only compound on this list backed by full FDA approval and Phase 3 trial data.</p>
+            <p class="evidence-card-source">FDA-approved prescribing information, VYLEESI (bremelanotide), Initial U.S. Approval 2019</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">CJC-1295 / Ipamorelin</h3>
+          <p class="evidence-card-category">Fitness</p>
+          <span class="evidence-badge evidence-badge-clinical">Clinical Trial</span>
+          <button type="button" class="evidence-card-hint">See the evidence &rarr;</button>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">A 2006 study in the Journal of Clinical Endocrinology &amp; Metabolism found CJC-1295 produced sustained, dose-dependent increases in growth hormone and IGF-1 in healthy adults over several weeks.</p>
+            <p class="evidence-card-takeaway">Human data confirms the GH/IGF-1 effect; larger trials on muscle or fat outcomes are still lacking.</p>
+            <p class="evidence-card-source">Journal of Clinical Endocrinology &amp; Metabolism, 2006</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">Tesamorelin</h3>
+          <p class="evidence-card-category">Fitness</p>
+          <span class="evidence-badge evidence-badge-fda">FDA-Approved<span class="evidence-badge-qualifier">(different indication)</span></span>
+          <button type="button" class="evidence-card-hint">See the evidence &rarr;</button>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">FDA-approved as Egrifta/Egrifta WR based on two trials in 816 HIV-positive adults, showing significant reduction in visceral abdominal fat via CT scan vs. placebo.</p>
+            <p class="evidence-card-takeaway">Real FDA approval and real trial data — though for HIV-related fat loss, not general fitness; use here is off-label.</p>
+            <p class="evidence-card-source">FDA-approved EGRIFTA prescribing information, accessdata.fda.gov</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">MOTS-C</h3>
+          <p class="evidence-card-category">Fitness</p>
+          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
+          <button type="button" class="evidence-card-hint">See the evidence &rarr;</button>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">Discovered in 2015 as a mitochondria-derived "exercise mimetic" peptide; research remains mostly in animal and cell models, with human trials for metabolic conditions only just beginning.</p>
+            <p class="evidence-card-takeaway">One of the newest peptides in research — a promising mechanism, but human evidence is still in its infancy.</p>
+            <p class="evidence-card-source">MOTS-c: A promising mitochondrial-derived peptide for therapeutic exploitation, PMC, 2023</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">GHK-Cu</h3>
+          <p class="evidence-card-category">Beauty</p>
+          <span class="evidence-badge evidence-badge-clinical">Clinical Trial</span>
+          <button type="button" class="evidence-card-hint">See the evidence &rarr;</button>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">A 12-week clinical trial in women with photoaged skin measured up to a 28% increase in collagen density with daily topical use.</p>
+            <p class="evidence-card-takeaway">One of the better-studied peptides on this list, with real human skin-trial data behind it.</p>
+            <p class="evidence-card-source">Pickart &amp; Margolina, Biomolecules, 2018 (systematic review of GHK-Cu clinical trials)</p>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
   <section id="build-routine">
     <div class="quiz-shell">
 
@@ -2791,7 +2881,7 @@
 
   /* Active link highlighting via IntersectionObserver */
   var navLinks = document.querySelectorAll('.nav-link[data-target]');
-  var sections = ['home','one-mission','how-it-works','explore-molecules','productsView','build-routine','contact']
+  var sections = ['home','one-mission','how-it-works','explore-molecules','productsView','evidence','build-routine','contact']
     .map(function(id){ return document.getElementById(id); })
     .filter(Boolean);
 
@@ -3120,6 +3210,22 @@
   });
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape' && mobileNavDrawer.classList.contains('open')) closeMobileDrawer();
+  });
+
+  /* ---------------- Evidence cards: tap-to-reveal (mobile) ----------------
+     Desktop already reveals on :hover/:focus-within via CSS alone, no JS
+     needed there. .evidence-card-hint is a real <button> (see the evidence
+     section HTML) so this same handler also gives keyboard/mobile users an
+     explicit, reliable toggle instead of relying on hover, which doesn't
+     really exist on a touchscreen. Harmless on desktop too — clicking it
+     there just pins the card open until clicked again. */
+  document.querySelectorAll('.evidence-card-hint').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var card = btn.closest('.evidence-card');
+      if (!card) return;
+      var open = card.classList.toggle('is-revealed');
+      btn.innerHTML = open ? 'Hide evidence &larr;' : 'See the evidence &rarr;';
+    });
   });
 
   consultForm.addEventListener('submit', function(e){
