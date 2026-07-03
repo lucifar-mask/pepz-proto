@@ -715,10 +715,17 @@
     align-items:flex-start;
     text-align:left;
     overflow-y:auto;
+    /* Scrollbar hidden (visible native scrollbars looked out of place on
+       an otherwise chrome-free floating card) — content is still fully
+       scrollable via wheel/trackpad/touch/keyboard, this only hides the
+       track+thumb UI. Same pattern already used on .card-row below. */
+    scrollbar-width:none;
+    -ms-overflow-style:none;
     z-index:61;
     padding:88px 56px 56px;
     border-radius:25px;
   }
+  .goal-card.card-expanded::-webkit-scrollbar{ display:none; }
   .goal-card.card-collapsing{
     transition:opacity .35s ease, transform .35s ease;
     opacity:0;
@@ -899,11 +906,21 @@
   .goal-card.card-expanded .detail-actions{opacity:1;}
   /* The real photo, as an actual card — not a background. Same per-goal/
      per-theme image set as .goal-card::before, just shown at full opacity
-     in its own bordered, rounded panel instead of faded behind the text. */
+     in its own bordered, rounded panel instead of faded behind the text.
+     Sticky rather than plain in-flow: the text column is often much taller
+     than a well-proportioned photo, so a fixed-position photo would either
+     leave a lot of dead space below it (if kept a sane size) or get
+     stretched into a distorted, oversized crop (if forced to match the
+     text's full height). Sticking it to the top of the card's own scroll
+     area instead means it stays composed in view as the text scrolls
+     past beside it — reads as intentional, not "the image is too short
+     for its column". */
   .detail-photo{
-    flex:0 0 clamp(180px,24vw,300px);
-    width:clamp(180px,24vw,300px);
-    aspect-ratio:3/4;
+    flex:0 0 clamp(220px,26vw,340px);
+    width:clamp(220px,26vw,340px);
+    aspect-ratio:4/5;
+    position:sticky;
+    top:0;
     border-radius:20px;
     border:1px solid var(--brand);
     background-size:cover;
