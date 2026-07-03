@@ -675,6 +675,19 @@
   html.theme-her .goal-card[data-goal="longevity"]::before{ background-image:url('assets/mission-longevity-female.jpg'); }
   html.theme-her .goal-card[data-goal="beauty"]::before{ background-image:url('assets/mission-beauty-female.jpg'); }
   html.theme-her .goal-card[data-goal="fitness"]::before{ background-image:url('assets/mission-fitness-female.jpg'); }
+  /* Expanded state: the same low-opacity sharp photo that works as a
+     collapsed-card watermark reads as a distracting, semi-legible second
+     copy of the image once there's a real photo card next to the text
+     (see .detail-photo below) — so once expanded, blow it out into a
+     soft, indistinct blurred wash instead. inset goes negative (bigger
+     than the card) so the blur's own soft fade-out edge sits outside the
+     visible card and gets clipped clean by the card's own boundary,
+     rather than showing as a visible halo just inside the edge. */
+  .goal-card.card-expanded::before{
+    inset:-60px;
+    filter:blur(60px);
+    opacity:.35;
+  }
   .goal-card.card-flipping{ animation:none; }
   .goal-card.card-flipping{
     position:fixed;
@@ -802,25 +815,36 @@
 
   /* Detail content lives inside the card itself (shared element), hidden
      until the card is expanded, so the SAME node grows rather than a
-     separate panel cross-fading in. */
+     separate panel cross-fading in. Expanded layout is two columns: the
+     text (.detail-text) on the left, and the goal's real photo as its
+     own visible card (.detail-photo) on the right — not blended into the
+     background, so it reads as a proper image rather than a watermark. */
   .goal-card-detail{
     display:none;
-    flex-direction:column;
     flex:1 1 auto;
     min-height:0;
   }
   .goal-card.card-expanded .goal-card-detail{
     display:flex;
+    flex-direction:row;
+    align-items:flex-start;
+    gap:56px;
   }
   .goal-card.card-expanded .goal-card-summary{
     display:none;
+  }
+  .detail-text{
+    display:flex;
+    flex-direction:column;
+    flex:1 1 auto;
+    min-width:0;
+    min-height:0;
   }
   .detail-body{
     font-weight:300;
     font-size:clamp(15px,1.6vw,26px);
     line-height:1.5;
     color:var(--fg);
-    max-width:1078px;
     opacity:0;
     transition:opacity .3s ease .15s;
   }
@@ -834,6 +858,35 @@
     transition:opacity .3s ease .2s;
   }
   .goal-card.card-expanded .detail-actions{opacity:1;}
+  /* The real photo, as an actual card — not a background. Same per-goal/
+     per-theme image set as .goal-card::before, just shown at full opacity
+     in its own bordered, rounded panel instead of faded behind the text. */
+  .detail-photo{
+    flex:0 0 clamp(220px,28vw,380px);
+    width:clamp(220px,28vw,380px);
+    aspect-ratio:3/4;
+    border-radius:20px;
+    border:1px solid var(--brand);
+    background-size:cover;
+    background-position:center;
+    background-color:#0a0a0a;
+    box-shadow:0 24px 60px rgba(0,0,0,0.4);
+    opacity:0;
+    transform:translateY(14px);
+    transition:opacity .35s ease .12s, transform .35s ease .12s;
+  }
+  .goal-card.card-expanded .detail-photo{
+    opacity:1;
+    transform:translateY(0);
+  }
+  .goal-card[data-goal="muscle-recovery"] .detail-photo{ background-image:url('assets/mission-muscle-recovery-male.jpg'); }
+  .goal-card[data-goal="longevity"] .detail-photo{ background-image:url('assets/mission-longevity-male.jpg'); }
+  .goal-card[data-goal="beauty"] .detail-photo{ background-image:url('assets/mission-beauty-male.jpg'); }
+  .goal-card[data-goal="fitness"] .detail-photo{ background-image:url('assets/mission-fitness-male.jpg'); }
+  html.theme-her .goal-card[data-goal="muscle-recovery"] .detail-photo{ background-image:url('assets/mission-muscle-recovery-female.jpg'); }
+  html.theme-her .goal-card[data-goal="longevity"] .detail-photo{ background-image:url('assets/mission-longevity-female.jpg'); }
+  html.theme-her .goal-card[data-goal="beauty"] .detail-photo{ background-image:url('assets/mission-beauty-female.jpg'); }
+  html.theme-her .goal-card[data-goal="fitness"] .detail-photo{ background-image:url('assets/mission-fitness-female.jpg'); }
 
   /* ---- Mobile: static landscape mission cards ----
      Hidden on desktop by default (see .mission-cards-mobile below); shown
@@ -1472,6 +1525,75 @@
     color:var(--muted-fg);
     opacity:.7;
     margin:0;
+  }
+  /* Performance toggle: lets visitors kill the ambient WebGL particle
+     layer themselves (see #bgParticlesCanvas + its render loop near the
+     end of the file) — same reasoning as the Explore the Molecules
+     play/stop control, just for the sitewide background one. Only
+     rendered when that layer can actually run in the first place (see
+     the media query mirroring #bgParticlesCanvas's own hide rule at the
+     top of the stylesheet) — nothing to toggle on mobile/reduced-motion,
+     since the canvas never starts there regardless. */
+  .perf-toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin:0 0 24px;
+  }
+  @media (prefers-reduced-motion:reduce), (max-width:900px), (hover:none), (pointer:coarse){
+    .perf-toggle-row{display:none;}
+  }
+  .perf-toggle-label{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--muted-fg);
+  }
+  /* Same on/off pill-switch shape used nowhere else yet on the site, but
+     built from the same visual language as everything else here: brand-
+     color border/fill, glow-pulse-friendly transitions, rounded-full. */
+  .perf-toggle{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    width:42px;height:24px;
+    flex:none;
+    cursor:pointer;
+  }
+  .perf-toggle input{
+    position:absolute;
+    inset:0;
+    opacity:0;
+    margin:0;
+    cursor:pointer;
+  }
+  .perf-toggle-track{
+    position:absolute;
+    inset:0;
+    border-radius:100px;
+    border:1px solid var(--brand);
+    background:transparent;
+    transition:background .2s ease;
+  }
+  .perf-toggle input:checked ~ .perf-toggle-track{
+    background:rgba(var(--brand-glow-rgb),0.35);
+  }
+  .perf-toggle-thumb{
+    position:absolute;
+    top:2px;left:2px;
+    width:18px;height:18px;
+    border-radius:50%;
+    background:var(--muted-fg);
+    transition:transform .2s cubic-bezier(.16,.84,.44,1), background .2s ease;
+  }
+  .perf-toggle input:checked ~ .perf-toggle-track .perf-toggle-thumb{
+    transform:translateX(18px);
+    background:var(--brand);
+  }
+  .perf-toggle input:focus-visible ~ .perf-toggle-track{
+    box-shadow:0 0 0 2px rgba(var(--brand-glow-rgb),0.4);
   }
 
   /* ---------- OUR PRODUCTS ----------
@@ -2447,9 +2569,12 @@
                 <h3>MUSCLE<br>RECOVERY</h3>
               </div>
               <div class="goal-card-detail">
-                <h3>MUSCLE RECOVERY</h3>
-                <p class="detail-body">Peptide-based recovery protocols work by accelerating the body's own repair signaling rather than masking pain. <span class="accent-text">BPC-157 and TB-500</span> promote angiogenesis (new blood vessel growth) into damaged tendons, ligaments, and gut tissue, areas that are naturally slow to heal due to poor blood supply. This translates to faster tissue regeneration after strains, tears, or surgery, while also calming systemic inflammation and supporting gut lining integrity, which is often compromised by intense training. <b>The result is a shorter window between injury and return to full output: rehab that used to take months can compress into weeks, letting athletes train harder, recover cleaner, and stay consistent without the setbacks that chronic micro-injuries usually cause.</b></p>
-                <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+                <div class="detail-text">
+                  <h3>MUSCLE RECOVERY</h3>
+                  <p class="detail-body">Peptide-based recovery protocols work by accelerating the body's own repair signaling rather than masking pain. <span class="accent-text">BPC-157 and TB-500</span> promote angiogenesis (new blood vessel growth) into damaged tendons, ligaments, and gut tissue, areas that are naturally slow to heal due to poor blood supply. This translates to faster tissue regeneration after strains, tears, or surgery, while also calming systemic inflammation and supporting gut lining integrity, which is often compromised by intense training. <b>The result is a shorter window between injury and return to full output: rehab that used to take months can compress into weeks, letting athletes train harder, recover cleaner, and stay consistent without the setbacks that chronic micro-injuries usually cause.</b></p>
+                  <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+                </div>
+                <div class="detail-photo" aria-hidden="true"></div>
               </div>
               <button class="goal-plus" data-goal="muscle-recovery" aria-label="Expand Muscle Recovery">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -2460,9 +2585,12 @@
                 <h3>LONGEVITY</h3>
               </div>
               <div class="goal-card-detail">
-                <h3>LONGEVITY</h3>
-                <p class="detail-body">Longevity-focused peptides work upstream of the visible signs of aging, targeting the cellular machinery that determines how well — and how long — the body keeps repairing itself. Compounds like <span class="accent-text">NAD+ and Epitalon</span> restore mitochondrial energy production and support circadian rhythm, helping cells generate the fuel they need for repair while deepening the restorative sleep where most regeneration happens. Others reinforce immune resilience and cellular turnover, addressing the slow breakdown in repair efficiency that drives age-related decline rather than just its symptoms. <b>Used together, these protocols aren't about slowing a clock — they're about restoring the cellular conditions for a longer, more resilient healthspan.</b></p>
-                <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+                <div class="detail-text">
+                  <h3>LONGEVITY</h3>
+                  <p class="detail-body">Longevity-focused peptides work upstream of the visible signs of aging, targeting the cellular machinery that determines how well — and how long — the body keeps repairing itself. Compounds like <span class="accent-text">NAD+ and Epitalon</span> restore mitochondrial energy production and support circadian rhythm, helping cells generate the fuel they need for repair while deepening the restorative sleep where most regeneration happens. Others reinforce immune resilience and cellular turnover, addressing the slow breakdown in repair efficiency that drives age-related decline rather than just its symptoms. <b>Used together, these protocols aren't about slowing a clock — they're about restoring the cellular conditions for a longer, more resilient healthspan.</b></p>
+                  <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+                </div>
+                <div class="detail-photo" aria-hidden="true"></div>
               </div>
               <button class="goal-plus" data-goal="longevity" aria-label="Expand Longevity">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -2473,9 +2601,12 @@
                 <h3>BEAUTY</h3>
               </div>
               <div class="goal-card-detail">
-                <h3>BEAUTY</h3>
-                <p class="detail-body">Beauty-focused peptides work by replacing signals the skin naturally stops producing with age, rather than masking the surface effects of that decline. <span class="accent-text">GHK-Cu</span>, a copper-binding peptide the body produces abundantly in youth and far less by the thirties, rebuilds the dermal matrix from below — stimulating collagen, elastin, and glycosaminoglycan synthesis to restore thickness and elasticity while accelerating repair of photodamage and supporting denser hair growth at the follicle. <b>Rather than sitting on top of the skin like a topical treatment, these peptides work systemically and topically to repair the underlying structure, producing results that compound over weeks rather than fading the moment you stop using them.</b></p>
-                <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+                <div class="detail-text">
+                  <h3>BEAUTY</h3>
+                  <p class="detail-body">Beauty-focused peptides work by replacing signals the skin naturally stops producing with age, rather than masking the surface effects of that decline. <span class="accent-text">GHK-Cu</span>, a copper-binding peptide the body produces abundantly in youth and far less by the thirties, rebuilds the dermal matrix from below — stimulating collagen, elastin, and glycosaminoglycan synthesis to restore thickness and elasticity while accelerating repair of photodamage and supporting denser hair growth at the follicle. <b>Rather than sitting on top of the skin like a topical treatment, these peptides work systemically and topically to repair the underlying structure, producing results that compound over weeks rather than fading the moment you stop using them.</b></p>
+                  <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+                </div>
+                <div class="detail-photo" aria-hidden="true"></div>
               </div>
               <button class="goal-plus" data-goal="beauty" aria-label="Expand Beauty">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -2486,9 +2617,12 @@
                 <h3>FITNESS</h3>
               </div>
               <div class="goal-card-detail">
-                <h3>FITNESS</h3>
-                <p class="detail-body">Fitness-focused peptides work by amplifying signals the body already uses to build and maintain lean tissue, rather than introducing something foreign to it. Growth-hormone secretagogues like <span class="accent-text">CJC-1295 and Ipamorelin</span> nudge the pituitary to pulse natural GH overnight, supporting lean muscle mass and shortening recovery windows between sessions, while mitochondrial peptides like MOTS-C boost exercise capacity and metabolic efficiency at the cellular level. <b>The effect compounds across training, recovery, and cognition — deeper sleep, leaner body composition, faster bounce-back from hard sessions, and a sharper edge for athletes, lifters, and anyone pushing to optimize physical output.</b></p>
-                <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+                <div class="detail-text">
+                  <h3>FITNESS</h3>
+                  <p class="detail-body">Fitness-focused peptides work by amplifying signals the body already uses to build and maintain lean tissue, rather than introducing something foreign to it. Growth-hormone secretagogues like <span class="accent-text">CJC-1295 and Ipamorelin</span> nudge the pituitary to pulse natural GH overnight, supporting lean muscle mass and shortening recovery windows between sessions, while mitochondrial peptides like MOTS-C boost exercise capacity and metabolic efficiency at the cellular level. <b>The effect compounds across training, recovery, and cognition — deeper sleep, leaner body composition, faster bounce-back from hard sessions, and a sharper edge for athletes, lifters, and anyone pushing to optimize physical output.</b></p>
+                  <div class="detail-actions"><button class="btn-outline">View Products</button></div>
+                </div>
+                <div class="detail-photo" aria-hidden="true"></div>
               </div>
               <button class="goal-plus" data-goal="fitness" aria-label="Expand Fitness">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -2903,6 +3037,13 @@
 
 <!-- ================= FOOTER ================= -->
 <footer class="site-footer">
+  <div class="perf-toggle-row">
+    <span class="perf-toggle-label">Background particles</span>
+    <label class="perf-toggle">
+      <input type="checkbox" id="particlesToggle" checked aria-label="Toggle background particle animation">
+      <span class="perf-toggle-track"><span class="perf-toggle-thumb"></span></span>
+    </label>
+  </div>
   <div class="trust-bar">
     <span class="trust-item">
       <svg viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="8" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -4735,7 +4876,20 @@ function frame() {
   renderer.render(scene, camera);
 }
 
+/* Manual override from the footer's "Background particles" switch (see
+   #particlesToggle below) — persisted so the choice sticks across page
+   loads. Kept as a flag rather than just calling stopBg() once, because
+   the Explore the Molecules IntersectionObserver below also calls
+   startBg()/stopBg() on its own timer; startBg() checks this flag so a
+   user who's turned particles off stays off even when scrolling away
+   from that section would otherwise resume them. */
+let userDisabledBg = false;
+try {
+  userDisabledBg = localStorage.getItem("pepzBgParticlesOff") === "1";
+} catch (e) {}
+
 function startBg() {
+  if (userDisabledBg) return;
   if (rafId !== null) return;
   bgCanvas.classList.remove("hidden");
   frame();
@@ -4745,7 +4899,7 @@ function stopBg() {
   bgCanvas.classList.add("hidden");
 }
 
-startBg();
+if (!userDisabledBg) startBg();
 
 /* Pause + fade out while Explore the Molecules is in view (Task #25): that
    section is fully opaque anyway, so this layer would be invisible there —
@@ -4760,6 +4914,22 @@ if (exploreEl && window.IntersectionObserver) {
     });
   }, { threshold: 0.15 });
   bgIO.observe(exploreEl);
+}
+
+/* Footer performance switch: lets a visitor kill this render loop
+   entirely for better performance on lower-powered machines, same idea
+   as the Explore the Molecules play/stop control. Reflects the persisted
+   choice on load, then flips userDisabledBg + starts/stops on change. */
+const particlesToggle = document.getElementById("particlesToggle");
+if (particlesToggle) {
+  particlesToggle.checked = !userDisabledBg;
+  particlesToggle.addEventListener("change", function () {
+    userDisabledBg = !particlesToggle.checked;
+    try {
+      localStorage.setItem("pepzBgParticlesOff", userDisabledBg ? "1" : "0");
+    } catch (e) {}
+    if (userDisabledBg) stopBg(); else startBg();
+  });
 }
 
 }
