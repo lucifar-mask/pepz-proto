@@ -1623,30 +1623,36 @@
     grid-template-columns:repeat(auto-fill,minmax(267px,267px));
     gap:28px;
     justify-content:start;
+    /* Cards size to their own content now (see .product-card below) rather
+       than a fixed height, so grid's default row-stretch would otherwise
+       force every card in a row to match the tallest one — align-items:
+       start keeps each card at its own natural height instead. */
+    align-items:start;
   }
-  /* Card geometry below is pixel-matched to the real Figma frame (node 30:612
-     "FOR HIM" / 32:274 "FOR HER"): a 267x504 card with a full-bleed square
-     (267x267) photo — rounded on all 4 corners, not just the top — inset at
-     the very top; a circular "+" quick-add icon overlaid on the photo's
-     top-right corner; the red "Compounded in the USA" pill and the
-     accent-color "Coming Soon" pill stacked and overlaid on the photo's
-     bottom-right corner (confirmed real positions, not a generic footer);
-     then name/description below the photo, a thin divider, and a full-width
-     Learn More button — all at the exact offsets pulled from Figma. */
+  /* Card layout: originally every part (name/desc/divider/button) was
+     absolute-positioned at pixel offsets pulled from Figma. That broke the
+     moment real product data didn't match the Figma placeholder text —
+     a 2-line title (e.g. "CJC-1295 / IPAMORELIN") would overflow its fixed
+     slot and visually collide with the description sitting at its own
+     fixed offset right below. Rebuilt as a normal flex column instead: the
+     square photo (with the quick-add "+" and "Coming Soon" badge overlaid
+     on top of it, in .product-media) sits fixed at the top, then name /
+     description / divider / footer stack in-flow in .product-body — each
+     part pushes the next one down by its own real height, so nothing can
+     ever overlap regardless of how long any given title or description
+     is. min-height (not height) keeps cards visually consistent at the
+     old 560px when content is short, while letting a card grow taller
+     instead of clipping/colliding when content runs long. */
   .product-card{
     width:267px;
-    /* Was 504px — +56px gives the description zone (between the photo and
-       the divider) real breathing room; some product descriptions were
-       tight enough to risk clipping against overflow:hidden below. */
-    height:560px;
+    min-height:560px;
     border-radius:25px;
     border:1px solid var(--brand);
     background:linear-gradient(180deg, var(--card) 0%, var(--bg) 100%);
-    position:relative;
-    /* overflow:hidden so the photo (which sits flush at top:0/left:0) can
-       never paint over the card's own border/rounded corners — previously
-       overflow:visible let the photo visually swallow the cyan outline
-       along the top edge, making the card look borderless there. */
+    display:flex;
+    flex-direction:column;
+    /* overflow:hidden so the photo (flush against the card's top corners)
+       can never paint over the card's own rounded border. */
     overflow:hidden;
     transition:opacity .35s ease, transform .35s ease, box-shadow .25s ease;
   }
@@ -1662,10 +1668,17 @@
     position:absolute;
     visibility:hidden;
   }
+  /* Part 1: photo + the "+" quick-add and "Coming Soon" badge overlaid on
+     top of it — the only part of the card where overlap is intentional. */
+  .product-media{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    flex:none;
+  }
   .product-photo{
     position:absolute;
-    top:0;left:0;
-    width:267px;height:267px;
+    inset:0;
     border-radius:25px;
     background-size:cover;
     background-position:center;
@@ -1687,7 +1700,7 @@
   .theme-her #productsView .product-quick-add:hover{color:#ffffff;}
   .coming-soon-badge{
     position:absolute;
-    top:238px;left:50%;
+    bottom:16px;left:50%;
     transform:translateX(-50%);
     display:flex;
     align-items:center;
@@ -1702,32 +1715,46 @@
     border-radius:25px;
   }
   .theme-her #productsView .coming-soon-badge{color:#ffffff;}
+  /* Parts 2-5: title, description, divider, footer — plain in-flow flex
+     column, so each one's real rendered height (1 or 2 line title, short
+     or long description) pushes the next part down instead of everything
+     sitting at fixed offsets that assume a specific text length. */
+  .product-body{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    padding:24px 29px 28px;
+  }
   .product-name{
-    position:absolute;
-    left:29px;top:285px;
     font-weight:800;
     font-size:24px;
     text-transform:uppercase;
-    line-height:1.1;
-    margin:0;
+    line-height:1.15;
+    margin:0 0 8px;
     color:var(--fg);
   }
   .product-desc{
-    position:absolute;
-    left:29px;top:323px;width:209px;
     font-size:12px;
     line-height:1.5;
     color:var(--fg);
     margin:0;
+    /* Fills whatever vertical space is left in the card (which has a
+       560px min-height) so the divider + button sit pinned near the
+       bottom when the description is short, same as the original Figma
+       spacing — but simply grows the card taller instead of overlapping
+       anything when a description runs long. */
+    flex:1;
   }
   .product-divider{
-    position:absolute;
-    left:44.5px;top:466.5px;width:179px;height:1px;
+    width:100%;height:1px;
+    margin:20px 0 0;
     background:rgba(255,255,255,0.2);
+    flex:none;
   }
   .product-footer{
-    position:absolute;
-    left:29px;top:485px;width:209px;
+    width:100%;
+    margin-top:16px;
+    flex:none;
   }
   .product-footer .btn-outline{
     display:block;
@@ -2205,27 +2232,26 @@
     }
     .mission-card-title{ flex:none; }
     #productsView{padding:140px 20px 80px;}
-    /* 2 columns, not 1 or 3, per request — the card itself switches from
-       the desktop's fixed 267x560 px frame to a fluid width + aspect-ratio
-       box below, with every absolutely-positioned child converted from
-       fixed px to % of the card (recomputed against the new 560px height)
-       so the whole design scales together instead of overflowing/
-       misaligning at a smaller size. */
+    /* 2 columns, not 1 or 3, per request. Card is the same in-flow flex
+       column as desktop (see the base .product-card rules) — just a
+       smaller min-height and tighter padding/font-sizes to fit the
+       narrower 2-up card width, so the same "nothing can collide"
+       guarantee applies here too. */
     .products-grid{grid-template-columns:repeat(2, 1fr); gap:14px 12px;}
     .product-card{
-      width:100%; height:auto; aspect-ratio:267/560;
+      width:100%; min-height:300px;
     }
-    .product-photo{ width:100%; height:auto; aspect-ratio:1/1; }
     .product-quick-add{
       width:34px; height:34px; top:6px; right:6px;
     }
     .coming-soon-badge{
-      top:42.5%; width:96px; height:26px; font-size:9px;
+      bottom:10px; width:96px; height:26px; font-size:9px;
     }
-    .product-name{ left:10.9%; top:50.9%; font-size:14px; }
-    .product-desc{ left:10.9%; top:57.7%; width:78.3%; font-size:10px; line-height:1.4; }
-    .product-divider{ left:16.7%; top:83.3%; width:67%; }
-    .product-footer{ left:10.9%; top:86.6%; width:78.3%; }
+    .product-body{ padding:14px 16px 18px; }
+    .product-name{ font-size:14px; margin:0 0 6px; }
+    .product-desc{ font-size:10px; line-height:1.4; }
+    .product-divider{ margin:14px 0 0; }
+    .product-footer{ margin-top:12px; }
     .product-footer .btn-outline{ padding:9px 10px; font-size:11px; }
     .filter-apply-btn{margin-left:0;}
     #build-routine{padding:120px 20px 60px;}
@@ -3439,16 +3465,20 @@
     return (
       '<article class="product-card" data-gender="' + p.gender + '" data-category="' + p.category + '"' +
         (p.extended ? ' data-extended="true"' : '') + '>' +
-        '<div class="product-photo" style="background-image:url(\'' + p.img + '\')"></div>' +
-        '<button class="product-quick-add" aria-label="Quick add ' + p.name + '">' +
-          '<svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
-        '</button>' +
-        '<span class="coming-soon-badge">Coming Soon</span>' +
-        '<h3 class="product-name">' + p.name + '</h3>' +
-        '<p class="product-desc">' + p.desc + '</p>' +
-        '<div class="product-divider"></div>' +
-        '<div class="product-footer">' +
-          '<button class="btn-outline">Learn More</button>' +
+        '<div class="product-media">' +
+          '<div class="product-photo" style="background-image:url(\'' + p.img + '\')"></div>' +
+          '<button class="product-quick-add" aria-label="Quick add ' + p.name + '">' +
+            '<svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
+          '</button>' +
+          '<span class="coming-soon-badge">Coming Soon</span>' +
+        '</div>' +
+        '<div class="product-body">' +
+          '<h3 class="product-name">' + p.name + '</h3>' +
+          '<p class="product-desc">' + p.desc + '</p>' +
+          '<div class="product-divider"></div>' +
+          '<div class="product-footer">' +
+            '<button class="btn-outline">Learn More</button>' +
+          '</div>' +
         '</div>' +
       '</article>'
     );
