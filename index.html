@@ -852,6 +852,133 @@
      problem. */
   .mission-card-body .accent-text{color:var(--fg);font-weight:800;}
 
+  /* ---------- EVIDENCE ----------
+     Hover-to-reveal cards, modeled on the Explore the Molecules tooltip
+     (#molTooltip below): a translucent, backdrop-blurred, brand-glow-
+     bordered panel that sits at opacity:0 and fades in on hover/focus,
+     fading back out on mouseout — same opacity/blur/glow mechanism, just
+     covering the whole card instead of following a 3D cursor. Uses
+     --bg-rgb (see :root) so the reveal panel re-themes with "For Her"
+     instead of staying hardcoded dark like the always-dark molTooltip. */
+  #evidence{
+    background:transparent;
+    padding:140px 40px 100px;
+  }
+  .evidence-inner{max-width:1400px;margin:0 auto;}
+  .evidence-heading{
+    font-weight:900;
+    font-size:clamp(32px,5vw,72px);
+    text-transform:uppercase;
+    text-align:center;
+    margin:0 0 12px;
+  }
+  .evidence-heading .accent{color:var(--brand);animation:glow-pulse-text 3.3s ease-in-out infinite;}
+  .evidence-sub{
+    text-align:center;
+    color:var(--muted-fg);
+    font-size:15px;
+    max-width:720px;
+    margin:0 auto 56px;
+    line-height:1.5;
+  }
+  .evidence-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:24px;
+  }
+  .evidence-card{
+    position:relative;
+    min-height:220px;
+    border-radius:20px;
+    border:1px solid var(--brand);
+    background:linear-gradient(180deg, var(--card) 0%, var(--bg) 100%);
+    padding:28px 26px;
+    overflow:hidden;
+    cursor:default;
+  }
+  .evidence-card-name{
+    font-weight:800;
+    font-size:20px;
+    text-transform:uppercase;
+    color:var(--fg);
+    margin:0 0 6px;
+  }
+  .evidence-card-category{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--brand);
+    margin:0 0 16px;
+  }
+  .evidence-badge{
+    display:inline-flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:1px;
+    border-radius:100px;
+    padding:6px 14px;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    line-height:1.3;
+  }
+  .evidence-badge-preclinical{border:1px solid var(--muted-fg);color:var(--muted-fg);}
+  .evidence-badge-clinical{border:1px solid var(--brand);color:var(--brand);}
+  .evidence-badge-fda{background:var(--brand);color:var(--primary-fg);border:1px solid var(--brand);}
+  html.theme-her .evidence-badge-fda{color:#ffffff;}
+  .evidence-badge-qualifier{font-size:9px;font-weight:600;opacity:.85;}
+  .evidence-card-hint{
+    position:absolute;
+    right:26px;bottom:22px;
+    font-size:10px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--muted-fg);
+    opacity:.6;
+  }
+  .evidence-card-reveal{
+    position:absolute; inset:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:26px;
+    background:rgba(var(--bg-rgb),0.92);
+    border:1px solid rgba(var(--brand-glow-rgb),0.45);
+    box-shadow:0 0 18px rgba(var(--brand-glow-rgb),0.15), inset 0 0 12px rgba(var(--brand-glow-rgb),0.05);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    border-radius:20px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .evidence-card:hover .evidence-card-reveal,
+  .evidence-card:focus-within .evidence-card-reveal{
+    opacity:1;
+    pointer-events:auto;
+  }
+  .evidence-card-claim{
+    color:var(--fg);
+    font-size:13px;
+    line-height:1.55;
+    margin:0 0 12px;
+  }
+  .evidence-card-takeaway{
+    color:var(--brand);
+    font-weight:700;
+    font-size:13px;
+    line-height:1.5;
+    margin:0 0 14px;
+  }
+  .evidence-card-source{
+    color:var(--muted-fg);
+    font-size:10px;
+    letter-spacing:.03em;
+    margin:0;
+  }
+
   /* ---------- HOW IT WORKS ---------- */
   #how-it-works{
     background:transparent; /* global ambient background shows through, see top of file */
@@ -872,6 +999,41 @@
     margin:0 0 48px;
   }
   .hiw-inner h2 .accent{color:var(--brand);animation:glow-pulse-text 3.3s ease-in-out infinite;}
+  .hiw-steps{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:28px;
+    margin:0 0 56px;
+    text-align:left;
+  }
+  .hiw-step{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .hiw-step-icon{
+    width:40px;height:40px;
+    border-radius:50%;
+    border:1.5px solid var(--brand);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--brand);
+    flex:none;
+  }
+  .hiw-step-icon svg{width:18px;height:18px;}
+  .hiw-step h3{
+    font-weight:800;
+    font-size:15px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    margin:0;
+    color:var(--fg);
+  }
+  .hiw-step p{
+    font-size:14px;
+    line-height:1.5;
+    color:var(--muted-fg);
+    margin:0;
+  }
   .video-frame{
     position:relative;
     width:100%;
@@ -1147,6 +1309,53 @@
   .success-state p{color:var(--muted-fg);font-size:14px;line-height:1.5;margin:0 0 24px;}
 
   ::selection{background:var(--brand);color:#000;}
+
+  /* ---------- SITE FOOTER + TRUST BAR ----------
+     No footer existed anywhere in this file before. Trust bar sits inside
+     the footer (rather than inside #home) so it doesn't compete with the
+     hero's own tightly-pinned layout (h1/copy centered, .learn-more already
+     absolutely pinned at bottom:56px) — this is the "just above where the
+     footer will live" placement option. */
+  .site-footer{
+    position:relative;
+    padding:48px 24px 36px;
+    text-align:center;
+    min-height:0;
+    height:auto;
+    overflow:visible;
+  }
+  .trust-bar{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:28px;
+    margin:0 0 32px;
+  }
+  .trust-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--muted-fg);
+  }
+  .trust-item svg{width:18px;height:18px;color:var(--brand);flex:none;}
+  .footer-line{
+    max-width:720px;
+    margin:0 auto 10px;
+    font-size:13px;
+    line-height:1.6;
+    color:var(--muted-fg);
+  }
+  .footer-copyright{
+    font-size:11px;
+    color:var(--muted-fg);
+    opacity:.7;
+    margin:0;
+  }
 
   /* ---------- OUR PRODUCTS ----------
      Now a normal section inside the continuous scroll (right after Explore
@@ -2095,10 +2304,152 @@
     </div>
   </section>
 
+  <!-- ================= EVIDENCE =================
+       One card per compound, hover-to-reveal — reuses the opacity/backdrop-
+       blur/brand-glow mechanism from the Explore the Molecules tooltip
+       (#molTooltip) rather than inventing a new interaction. Content below
+       is sourced directly from the client's own research; do not alter the
+       substance of any claim, badge, or citation. -->
+  <section id="evidence">
+    <div class="evidence-inner">
+      <h2 class="evidence-heading">THE <span class="accent">EVIDENCE</span></h2>
+      <p class="evidence-sub">Hover a card to see the actual research behind each compound.</p>
+
+      <div class="evidence-grid">
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">BPC-157</h3>
+          <p class="evidence-card-category">Muscle Recovery</p>
+          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
+          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">Extensively studied in animal models for tissue and gut-lining repair; no completed human clinical trials have been published.</p>
+            <p class="evidence-card-takeaway">Promising in animal research — human evidence doesn't exist yet, so expectations should stay realistic.</p>
+            <p class="evidence-card-source">FDA Category 2 Bulk Drug Substances list (fda.gov), 2023</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">TB-500</h3>
+          <p class="evidence-card-category">Muscle Recovery</p>
+          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
+          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">Animal and cell studies suggest pro-healing, anti-inflammatory activity; no completed human safety or efficacy trials exist.</p>
+            <p class="evidence-card-takeaway">Backed by lab and animal data, not yet by human trials.</p>
+            <p class="evidence-card-source">FDA Category 2 Bulk Drug Substances list (fda.gov); ClinicalTrials.gov</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">Sermorelin</h3>
+          <p class="evidence-card-category">Longevity</p>
+          <span class="evidence-badge evidence-badge-fda">FDA-Approved<span class="evidence-badge-qualifier">(historical / different indication)</span></span>
+          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">Originally FDA-approved as Geref (1997) for diagnosing and treating growth hormone deficiency in children; the branded product was discontinued in 2008 for commercial, not safety, reasons.</p>
+            <p class="evidence-card-takeaway">A once FDA-approved GH therapy — today's adult longevity use is an off-label, compounded application.</p>
+            <p class="evidence-card-source">FDA Federal Register determination, GEREF (sermorelin acetate), 2013</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">NAD+</h3>
+          <p class="evidence-card-category">Longevity</p>
+          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
+          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">No large randomized controlled human trials have established IV NAD+ therapy's anti-aging benefits; evidence so far is mechanistic and comes mainly from animal studies of NAD+ metabolism.</p>
+            <p class="evidence-card-takeaway">Early-stage research on a well-understood cellular pathway — human proof for anti-aging claims isn't there yet.</p>
+            <p class="evidence-card-source">Clinical Evidence for Targeting NAD Therapeutically, PMC, 2020</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">PT-141</h3>
+          <p class="evidence-card-category">Longevity</p>
+          <span class="evidence-badge evidence-badge-fda">FDA-Approved</span>
+          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">FDA-approved as Vyleesi (2019) based on two Phase 3 RECONNECT trials, which showed significantly increased sexual desire and satisfying sexual events vs. placebo in premenopausal women with HSDD.</p>
+            <p class="evidence-card-takeaway">The only compound on this list backed by full FDA approval and Phase 3 trial data.</p>
+            <p class="evidence-card-source">FDA-approved prescribing information, VYLEESI (bremelanotide), Initial U.S. Approval 2019</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">CJC-1295 / Ipamorelin</h3>
+          <p class="evidence-card-category">Fitness</p>
+          <span class="evidence-badge evidence-badge-clinical">Clinical Trial</span>
+          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">A 2006 study in the Journal of Clinical Endocrinology &amp; Metabolism found CJC-1295 produced sustained, dose-dependent increases in growth hormone and IGF-1 in healthy adults over several weeks.</p>
+            <p class="evidence-card-takeaway">Human data confirms the GH/IGF-1 effect; larger trials on muscle or fat outcomes are still lacking.</p>
+            <p class="evidence-card-source">Journal of Clinical Endocrinology &amp; Metabolism, 2006</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">Tesamorelin</h3>
+          <p class="evidence-card-category">Fitness</p>
+          <span class="evidence-badge evidence-badge-fda">FDA-Approved<span class="evidence-badge-qualifier">(different indication)</span></span>
+          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">FDA-approved as Egrifta/Egrifta WR based on two trials in 816 HIV-positive adults, showing significant reduction in visceral abdominal fat via CT scan vs. placebo.</p>
+            <p class="evidence-card-takeaway">Real FDA approval and real trial data — though for HIV-related fat loss, not general fitness; use here is off-label.</p>
+            <p class="evidence-card-source">FDA-approved EGRIFTA prescribing information, accessdata.fda.gov</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">MOTS-C</h3>
+          <p class="evidence-card-category">Fitness</p>
+          <span class="evidence-badge evidence-badge-preclinical">Preclinical</span>
+          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">Discovered in 2015 as a mitochondria-derived "exercise mimetic" peptide; research remains mostly in animal and cell models, with human trials for metabolic conditions only just beginning.</p>
+            <p class="evidence-card-takeaway">One of the newest peptides in research — a promising mechanism, but human evidence is still in its infancy.</p>
+            <p class="evidence-card-source">MOTS-c: A promising mitochondrial-derived peptide for therapeutic exploitation, PMC, 2023</p>
+          </div>
+        </article>
+
+        <article class="evidence-card" tabindex="0">
+          <h3 class="evidence-card-name">GHK-Cu</h3>
+          <p class="evidence-card-category">Beauty</p>
+          <span class="evidence-badge evidence-badge-clinical">Clinical Trial</span>
+          <span class="evidence-card-hint">Hover for evidence &rarr;</span>
+          <div class="evidence-card-reveal">
+            <p class="evidence-card-claim">A 12-week clinical trial in women with photoaged skin measured up to a 28% increase in collagen density with daily topical use.</p>
+            <p class="evidence-card-takeaway">One of the better-studied peptides on this list, with real human skin-trial data behind it.</p>
+            <p class="evidence-card-source">Pickart &amp; Margolina, Biomolecules, 2018 (systematic review of GHK-Cu clinical trials)</p>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
   <!-- ================= HOW IT WORKS ================= -->
   <section id="how-it-works">
     <div class="hiw-inner">
       <h2>HOW IT <span class="accent">WORKS</span></h2>
+      <div class="hiw-steps">
+        <div class="hiw-step">
+          <span class="hiw-step-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z" stroke="currentColor" stroke-width="1.6"/><path d="M4 20c1.4-3.8 4.6-6 8-6s6.6 2.2 8 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+          <h3>TALK TO A PROVIDER</h3>
+          <p>Book a virtual visit with a licensed physician who reviews your health history and goals.</p>
+        </div>
+        <div class="hiw-step">
+          <span class="hiw-step-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="6" y="4" width="12" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M9 4V3.5A1.5 1.5 0 0 1 10.5 2h3A1.5 1.5 0 0 1 15 3.5V4" stroke="currentColor" stroke-width="1.6"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <h3>GET YOUR PROTOCOL</h3>
+          <p>Your provider builds a personalized peptide protocol based on what your body actually needs.</p>
+        </div>
+        <div class="hiw-step">
+          <span class="hiw-step-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 8l9-5 9 5-9 5-9-5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M3 8v8l9 5 9-5V8M12 13v10" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+          <h3>START AT HOME</h3>
+          <p>Your peptides ship straight to your door, with clear instructions for self-administration.</p>
+        </div>
+      </div>
       <div class="video-frame" id="videoFrame">
         <!-- real explainer video, kept alongside this HTML file in the repo -->
         <video class="hiw-video" id="hiwVideo" src="assets/how-it-works.mp4" preload="metadata" playsinline></video>
@@ -2151,7 +2502,7 @@
 
       <div class="products-heading-row">
         <h1 class="products-h1" id="productsH1">FOR <span id="genderAccentWord">HIM</span></h1>
-        <p class="products-sub" id="productsSub">Solutions for every men.</p>
+        <p class="products-sub" id="productsSub">Solutions for every man.</p>
       </div>
 
       <div class="products-controls">
@@ -2205,26 +2556,26 @@
 
       <!-- 2) ROUTINE QUIZ welcome (Figma 32:401) -->
       <div class="quiz-panel" data-panel="welcome" id="panelWelcome">
-        <h2 class="quiz-heading size-lg">HI! WELCOME TO<br>YOUR PERSONALIZED<br>QUIZ</h2>
+        <h2 class="quiz-heading size-lg">LET'S BUILD YOUR<br>PERSONALIZED<br>ROUTINE</h2>
         <button type="button" class="quiz-btn quiz-btn-solid" id="welcomeNextBtn">Next</button>
       </div>
 
       <!-- 3) Name entry (Figma 34:71) -->
       <div class="quiz-panel" data-panel="name" id="panelName">
-        <h2 class="quiz-heading size-lg">First, What's your name?</h2>
+        <h2 class="quiz-heading size-lg">FIRST, WHAT'S YOUR NAME?</h2>
         <input type="text" class="quiz-input-outline quiz-name-input" id="quizNameInput" placeholder="NAME" autocomplete="given-name">
         <button type="button" class="quiz-btn quiz-btn-solid" id="nameNextBtn" disabled>Next</button>
       </div>
 
       <!-- 4) Greeting confirm (Figma 34:98) -->
       <div class="quiz-panel" data-panel="greeting" id="panelGreeting">
-        <h2 class="quiz-heading size-lg">HI <span class="accent" id="greetingNameWord">THERE</span>!<br>let's upgrade your body</h2>
+        <h2 class="quiz-heading size-lg">HI <span class="accent" id="greetingNameWord">THERE</span>!<br>LET'S UPGRADE YOUR BODY.</h2>
         <button type="button" class="quiz-btn quiz-btn-solid" id="greetingNextBtn">Next</button>
       </div>
 
       <!-- 5) Primary goal, multi-select (Figma 34:120) -->
       <div class="quiz-panel" data-panel="goals" id="panelGoals">
-        <h2 class="quiz-heading size-md">first- what matters to you mostly right now, <span id="goalsNameWord">there</span>?</h2>
+        <h2 class="quiz-heading size-md">WHAT MATTERS MOST TO YOU RIGHT NOW, <span id="goalsNameWord">THERE</span>?</h2>
         <div class="quiz-option-list" id="quizGoalGrid">
           <button type="button" class="quiz-option-row" data-goal="Muscle Recovery">Muscle Recovery</button>
           <button type="button" class="quiz-option-row" data-goal="Longevity">Longevity</button>
@@ -2311,6 +2662,30 @@
   </section>
 
 </main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="site-footer">
+  <div class="trust-bar">
+    <span class="trust-item">
+      <svg viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="8" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      HIPAA-Compliant
+    </span>
+    <span class="trust-item">
+      <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.5v7M6.5 10h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      Licensed Physician Network
+    </span>
+    <span class="trust-item">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M8 3h4M8.5 3v4.2L4.8 14a1.6 1.6 0 0 0 1.4 2.4h7.6a1.6 1.6 0 0 0 1.4-2.4L11.5 7.2V3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.3 11.5h7.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      Third-Party Lab-Tested
+    </span>
+    <span class="trust-item">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6 2.2v4.6c0 4-2.6 6.9-6 8.2-3.4-1.3-6-4.2-6-8.2V4.7l6-2.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      18+ Only
+    </span>
+  </div>
+  <p class="footer-line">PEPZ is a technology platform that connects you with independent, licensed physicians and accredited pharmacies — PEPZ does not itself practice medicine or dispense medication.</p>
+  <p class="footer-copyright">&copy; 2026 PEPZ. All rights reserved.</p>
+</footer>
 
 <!-- ================= BOOK CONSULTATION MODAL ================= -->
 <div class="modal-overlay" id="bookModal">
@@ -2917,8 +3292,8 @@
   var activeCategories = []; // applied (via Apply) category filters
 
   var COPY = {
-    him: { word:'HIM', sub:'Solutions for every men.' },
-    her: { word:'HER', sub:'Solutions for every women.' }
+    him: { word:'HIM', sub:'Solutions for every man.' },
+    her: { word:'HER', sub:'Solutions for every woman.' }
   };
 
   function setGender(gender){
@@ -3230,7 +3605,7 @@
     quizState.name = quizNameInput.value.trim();
     var displayName = (quizState.name || 'there').toUpperCase();
     greetingNameWord.textContent = displayName;
-    goalsNameWord.textContent = quizState.name || 'there';
+    goalsNameWord.textContent = displayName;
     goToPanel('greeting');
   });
 
