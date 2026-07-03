@@ -2176,6 +2176,27 @@
       text-align:center;
       opacity:1 !important;
     }
+    /* Bug fix: on mobile the reveal panel was still keyed off :hover/
+       :focus-within (see the base .evidence-card-reveal rule above) in
+       ADDITION to .is-revealed. Touch input doesn't have real hover, but
+       both iOS Safari and Chrome Android apply "sticky hover" — a tap
+       leaves the element in a :hover (and often :focus-within) state
+       until something else is tapped. That meant tapping the button to
+       CLOSE the card correctly toggled .is-revealed off and flipped the
+       label back to "See the evidence", but the panel stayed visually
+       open anyway because the lingering :hover kept matching — the tap
+       looked like it did nothing. Same specificity as the base rule
+       (0,0,3,0) and declared later, so on mobile this simply removes
+       hover/focus-within as triggers and leaves .is-revealed (fully
+       JS/tap-controlled) as the only thing driving the reveal. */
+    .evidence-card:hover .evidence-card-reveal,
+    .evidence-card:focus-within .evidence-card-reveal{
+      max-height:0;
+      opacity:0;
+      margin-top:0;
+      padding:0 18px;
+      border-color:transparent;
+    }
     .mission-card{
       flex-direction:column;
       align-items:flex-start;
