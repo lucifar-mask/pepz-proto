@@ -675,18 +675,18 @@
   html.theme-her .goal-card[data-goal="longevity"]::before{ background-image:url('assets/mission-longevity-female.jpg'); }
   html.theme-her .goal-card[data-goal="beauty"]::before{ background-image:url('assets/mission-beauty-female.jpg'); }
   html.theme-her .goal-card[data-goal="fitness"]::before{ background-image:url('assets/mission-fitness-female.jpg'); }
-  /* Expanded state: the same low-opacity sharp photo that works as a
-     collapsed-card watermark reads as a distracting, semi-legible second
-     copy of the image once there's a real photo card next to the text
-     (see .detail-photo below) — so once expanded, blow it out into a
-     soft, indistinct blurred wash instead. inset goes negative (bigger
-     than the card) so the blur's own soft fade-out edge sits outside the
-     visible card and gets clipped clean by the card's own boundary,
-     rather than showing as a visible halo just inside the edge. */
+  /* Expanded state: once there's a real, crisp photo card next to the
+     text (.detail-photo below), the same image faded in behind everything
+     is just a redundant, messier second copy of it — trying to blur it
+     into an ambient wash instead (an earlier version of this) still read
+     as patchy/low-quality rather than clean. Simplest fix: the card has
+     its own solid gradient background already: just hide the watermark
+     entirely while expanded and let that show through instead. The
+     "blurred" surface the card now floats on is .goal-expand-backdrop —
+     a real blurred view of the page behind it, not a blurred copy of the
+     product photo. */
   .goal-card.card-expanded::before{
-    inset:-60px;
-    filter:blur(60px);
-    opacity:.35;
+    opacity:0;
   }
   .goal-card.card-flipping{ animation:none; }
   .goal-card.card-flipping{
@@ -700,16 +700,24 @@
                border-radius .5s cubic-bezier(.16,.84,.44,1),
                padding .5s cubic-bezier(.16,.84,.44,1),
                justify-content 0s;
-    box-shadow:0 30px 80px rgba(0,0,0,0.55);
+    box-shadow:0 40px 100px rgba(0,0,0,0.5);
   }
+  /* Expanded card is a floating, bounded panel — NOT a fullscreen takeover
+     (that was the "looks bad" version: edge-to-edge, no rounding, no
+     breathing room). Sized/centered by expandedRect() in JS (replaces the
+     old fullscreenRect()), this just keeps the same rounded corners as
+     the collapsed grid card and gives it real padding, so growing into
+     this state reads as "the card got bigger", not "the card became the
+     page". The dimmed, blurred rest-of-the-page behind it is
+     .goal-expand-backdrop, not a treatment on the card itself. */
   .goal-card.card-expanded{
     justify-content:flex-start;
     align-items:flex-start;
     text-align:left;
     overflow-y:auto;
     z-index:61;
-    padding:64px 96px;
-    border-radius:0;
+    padding:88px 56px 56px;
+    border-radius:25px;
   }
   .goal-card.card-collapsing{
     transition:opacity .35s ease, transform .35s ease;
@@ -726,9 +734,33 @@
     pointer-events:none;
     animation:none;
   }
+  /* Dimmed, blurred view of the rest of the page while a card is
+     expanded — same visual language as .modal-overlay elsewhere on the
+     site, just reused here instead of inventing a new "blur the card's
+     own background image" trick (which is what looked messy before).
+     Sits behind the card (z-index 59 vs the card's 60/61) but above
+     everything else; clicking it closes the card, same as a modal. */
+  .goal-expand-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:59;
+    background:rgba(0,0,0,0.55);
+    backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .35s ease;
+  }
+  .goal-expand-backdrop.show{
+    opacity:1;
+    pointer-events:auto;
+  }
   /* single contextual arrow while a card is expanded, cycles to the next
      goal's detail view without returning to the grid first — mirrors the
-     row-arrow motif used for the collapsed card row. */
+     row-arrow motif used for the collapsed card row. Hidden below ~1300px:
+     the card itself can get close enough to the true viewport edge there
+     that a fixed-to-viewport arrow risks overlapping its corner instead of
+     floating clearly outside it. */
   .expanded-arrow{
     position:fixed;
     top:50%;right:40px;
@@ -737,6 +769,9 @@
     z-index:65;
   }
   .expanded-arrow.hidden{opacity:0;pointer-events:none;}
+  @media (max-width:1300px){
+    .expanded-arrow{display:none;}
+  }
   .goal-card h3{
     font-weight:900;
     font-size:clamp(28px,3.2vw,48px);
@@ -776,8 +811,12 @@
   .goal-card.card-expanded .goal-plus{
     left:auto;
     bottom:auto;
-    top:40px;
-    right:40px;
+    /* Sits in the card's own top padding strip (padding-top:88px above),
+       clear of both the heading and .detail-photo below it — this is
+       exactly the bug in the "looks bad" version: the close button and
+       the photo card were both claiming the same top-right corner. */
+    top:28px;
+    right:28px;
   }
 
   .row-arrow{
@@ -862,8 +901,8 @@
      per-theme image set as .goal-card::before, just shown at full opacity
      in its own bordered, rounded panel instead of faded behind the text. */
   .detail-photo{
-    flex:0 0 clamp(220px,28vw,380px);
-    width:clamp(220px,28vw,380px);
+    flex:0 0 clamp(180px,24vw,300px);
+    width:clamp(180px,24vw,300px);
     aspect-ratio:3/4;
     border-radius:20px;
     border:1px solid var(--brand);
@@ -2553,6 +2592,10 @@
            .mission-cards-desktop in the max-width:900px query), where
            .mission-cards-mobile below takes over instead. -->
       <div class="mission-cards-desktop">
+        <!-- Dimmed/blurred view of the rest of the page while a goal card
+             is expanded (see JS: toggled alongside .card-expanded, click
+             closes same as a modal backdrop). -->
+        <div class="goal-expand-backdrop" id="goalExpandBackdrop" aria-hidden="true"></div>
         <div class="mission-hint-row">
           <span class="mission-hint">click the '+' to learn more</span>
           <span class="mission-hint-line"></span>
@@ -3248,6 +3291,7 @@
   var flipAnimating = false;
   var placeholders = new WeakMap(); // card -> its in-grid stand-in element
   var expandedArrowBtn = document.getElementById('expandedArrow');
+  var goalExpandBackdrop = document.getElementById('goalExpandBackdrop');
   var FLIP_MS = 520; // must be >= the CSS transition duration used below
 
   function clearInlineRect(card){
@@ -3257,11 +3301,23 @@
     card.style.height = '';
   }
 
-  function fullscreenRect(){
-    // fill the whole screen but align under the fixed header, not behind it
+  function expandedRect(){
+    // Floating, bounded card centered in the space below the fixed header —
+    // NOT a fullscreen takeover (that was the old fullscreenRect(), which
+    // read as "the card became the page" rather than "the card grew").
+    // Capped so it never gets uncomfortably huge on very large monitors,
+    // and never gets uncomfortably tight above the 900px desktop breakpoint.
     var header = document.querySelector('.site-header');
     var headerH = header ? header.offsetHeight : 0;
-    return { top:headerH, left:0, width:window.innerWidth, height:window.innerHeight - headerH };
+    var availH = window.innerHeight - headerH;
+    var w = Math.min(1100, window.innerWidth * 0.9);
+    var h = Math.min(720, availH * 0.86);
+    return {
+      top: headerH + (availH - h) / 2,
+      left: (window.innerWidth - w) / 2,
+      width: w,
+      height: h
+    };
   }
 
   function animateBox(card, from, to, onDone){
@@ -3326,8 +3382,9 @@
 
     card.classList.add('card-flipping');
     document.body.style.overflow = 'hidden'; // lock background scroll while expanded
+    if (goalExpandBackdrop) goalExpandBackdrop.classList.add('show');
 
-    animateBox(card, first, fullscreenRect(), function(){
+    animateBox(card, first, expandedRect(), function(){
       flipAnimating = false;
       expandedCard = card;
       expandedArrowBtn.classList.remove('hidden');
@@ -3338,6 +3395,7 @@
     if (flipAnimating || expandedCard !== card) return;
     flipAnimating = true;
     expandedArrowBtn.classList.add('hidden');
+    if (goalExpandBackdrop) goalExpandBackdrop.classList.remove('show');
 
     var placeholder = placeholders.get(card);
     var from = card.getBoundingClientRect();
@@ -3379,6 +3437,14 @@
       }
     });
   });
+
+  // Clicking the dimmed/blurred backdrop closes the card, same as any
+  // other modal-style overlay on the site.
+  if (goalExpandBackdrop){
+    goalExpandBackdrop.addEventListener('click', function(){
+      if (expandedCard) collapseCard(expandedCard);
+    });
+  }
 
   expandedArrowBtn.addEventListener('click', function(){
     if (!expandedCard || flipAnimating) return;
