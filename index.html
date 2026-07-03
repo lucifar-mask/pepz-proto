@@ -644,6 +644,37 @@
     transform:translateY(-6px);
     box-shadow:0 14px 44px rgba(var(--brand-glow-rgb),0.2);
   }
+  /* Low-opacity photo behind each card's text — image swaps with the
+     site's For Him/For Her theme (male photos by default, female photos
+     under html.theme-her), keyed off the same data-goal attribute already
+     used for the FLIP expand logic below. Painted via ::before with a
+     negative z-index so it sits above the card's own gradient background
+     but underneath all text/buttons: .goal-card already forms its own
+     stacking context (animation + will-change:transform), so z-index:-1
+     stays contained inside it rather than escaping to the page root.
+     border-radius:inherit + inset:0 clips the image to the card's rounded
+     corners (and stays correct through the expand animation, where
+     card-expanded sets border-radius:0) without needing overflow:hidden,
+     which would otherwise fight card-expanded's overflow-y:auto. */
+  .goal-card::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:-1;
+    border-radius:inherit;
+    background-size:cover;
+    background-position:center;
+    opacity:.2;
+    pointer-events:none;
+  }
+  .goal-card[data-goal="muscle-recovery"]::before{ background-image:url('assets/mission-muscle-recovery-male.jpg'); }
+  .goal-card[data-goal="longevity"]::before{ background-image:url('assets/mission-longevity-male.jpg'); }
+  .goal-card[data-goal="beauty"]::before{ background-image:url('assets/mission-beauty-male.jpg'); }
+  .goal-card[data-goal="fitness"]::before{ background-image:url('assets/mission-fitness-male.jpg'); }
+  html.theme-her .goal-card[data-goal="muscle-recovery"]::before{ background-image:url('assets/mission-muscle-recovery-female.jpg'); }
+  html.theme-her .goal-card[data-goal="longevity"]::before{ background-image:url('assets/mission-longevity-female.jpg'); }
+  html.theme-her .goal-card[data-goal="beauty"]::before{ background-image:url('assets/mission-beauty-female.jpg'); }
+  html.theme-her .goal-card[data-goal="fitness"]::before{ background-image:url('assets/mission-fitness-female.jpg'); }
   .goal-card.card-flipping{ animation:none; }
   .goal-card.card-flipping{
     position:fixed;
@@ -824,7 +855,33 @@
     border:1px solid var(--brand);
     background:linear-gradient(180deg, var(--card) 0%, var(--bg) 100%);
     padding:44px 56px;
+    position:relative;
+    isolation:isolate;
   }
+  /* Same low-opacity photo-behind-text treatment as the desktop .goal-card
+     (see that block for the full stacking-order explanation) — isolation:
+     isolate gives this plain (non-animated) card its own stacking context
+     so the ::before's z-index:-1 stays contained instead of escaping to
+     the page root. */
+  .mission-card::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:-1;
+    border-radius:inherit;
+    background-size:cover;
+    background-position:center;
+    opacity:.2;
+    pointer-events:none;
+  }
+  .mission-card[data-goal="muscle-recovery"]::before{ background-image:url('assets/mission-muscle-recovery-male.jpg'); }
+  .mission-card[data-goal="longevity"]::before{ background-image:url('assets/mission-longevity-male.jpg'); }
+  .mission-card[data-goal="beauty"]::before{ background-image:url('assets/mission-beauty-male.jpg'); }
+  .mission-card[data-goal="fitness"]::before{ background-image:url('assets/mission-fitness-male.jpg'); }
+  html.theme-her .mission-card[data-goal="muscle-recovery"]::before{ background-image:url('assets/mission-muscle-recovery-female.jpg'); }
+  html.theme-her .mission-card[data-goal="longevity"]::before{ background-image:url('assets/mission-longevity-female.jpg'); }
+  html.theme-her .mission-card[data-goal="beauty"]::before{ background-image:url('assets/mission-beauty-female.jpg'); }
+  html.theme-her .mission-card[data-goal="fitness"]::before{ background-image:url('assets/mission-fitness-female.jpg'); }
   .mission-card-title{
     flex:0 0 220px;
     font-weight:900;
@@ -2367,19 +2424,19 @@
            max-width:900px. -->
       <div class="mission-cards-mobile">
         <div class="mission-cards-stack">
-          <article class="mission-card">
+          <article class="mission-card" data-goal="muscle-recovery">
             <h3 class="mission-card-title">MUSCLE<br>RECOVERY</h3>
             <p class="mission-card-body">Peptide-based recovery protocols accelerate the body's own repair signaling rather than masking pain. <span class="accent-text">BPC-157 and TB-500</span> speed tissue regeneration after strains, tears, or surgery while calming inflammation. <b>Rehab that used to take months can compress into weeks.</b></p>
           </article>
-          <article class="mission-card">
+          <article class="mission-card" data-goal="longevity">
             <h3 class="mission-card-title">LONGEVITY</h3>
             <p class="mission-card-body">Longevity-focused peptides target the cellular machinery that determines how well the body keeps repairing itself. <span class="accent-text">NAD+ and Epitalon</span> restore mitochondrial energy production and support the deep sleep where most regeneration happens. <b>The goal isn't slowing a clock — it's a longer, more resilient healthspan.</b></p>
           </article>
-          <article class="mission-card">
+          <article class="mission-card" data-goal="beauty">
             <h3 class="mission-card-title">BEAUTY</h3>
             <p class="mission-card-body">Beauty-focused peptides replace signals the skin naturally stops producing with age, rather than masking the surface effects. <span class="accent-text">GHK-Cu</span> rebuilds the dermal matrix from below, restoring thickness and elasticity while supporting denser hair growth. <b>Results compound over weeks rather than fading once you stop.</b></p>
           </article>
-          <article class="mission-card">
+          <article class="mission-card" data-goal="fitness">
             <h3 class="mission-card-title">FITNESS</h3>
             <p class="mission-card-body">Fitness-focused peptides amplify signals the body already uses to build and maintain lean tissue. <span class="accent-text">CJC-1295 and Ipamorelin</span> nudge natural GH release overnight, supporting lean muscle and faster recovery between sessions. <b>The effect compounds across training, recovery, and cognition.</b></p>
           </article>
