@@ -3674,54 +3674,54 @@
   var PRODUCT_CATALOG = [
     // ---- FOR HIM (all real pepz.com products) ----
     {
-      gender:'him', name:'BPC-157', category:'Muscle Recovery',
+      gender:'him', name:'BPC-157', slug:'bpc-157', category:'Muscle Recovery',
       desc:'Core repair peptide for soft-tissue and muscle recovery, heavily used in athletic contexts.',
       img:'assets/bpc-157-1-DvsU9HZn.png.png'
     },
     {
-      gender:'him', name:'TB-500', category:'Muscle Recovery',
+      gender:'him', name:'TB-500', slug:'tb-500', category:'Muscle Recovery',
       desc:'Angiogenesis-driving repair peptide paired with BPC-157 to speed healing in tendons, ligaments, and gut lining.',
       img:'assets/tb-500-1-tvvZj_AE.png.png'
     },
     {
-      gender:'him', name:'Sermorelin', category:'Longevity',
+      gender:'him', name:'Sermorelin', slug:'sermorelin', category:'Longevity',
       desc:'GHRH analog that restores natural growth-hormone output — anti-aging benefits with support for lean muscle mass.',
       img:'assets/sermorelin-1-C2d9qNKH.png.png'
     },
     {
-      gender:'him', name:'NAD+', category:'Longevity',
+      gender:'him', name:'NAD+', slug:'nad-plus', category:'Longevity',
       desc:'Restores mitochondrial energy production and supports circadian rhythm for deeper, more restorative sleep.',
       img:'assets/nad-plus-1-BKLocQST.png.png'
     },
     {
-      gender:'him', name:'PT-141', category:'Longevity',
+      gender:'him', name:'PT-141', slug:'pt-141', category:'Longevity',
       desc:'Melanocortin peptide used to support sexual wellness and vitality.',
       img:'assets/pt-141-1-D8L9njBl.png.png'
     },
     {
-      gender:'him', name:'CJC-1295 / Ipamorelin', category:'Fitness',
+      gender:'him', name:'CJC-1295 / Ipamorelin', slug:'cjc-1295-ipamorelin', category:'Fitness',
       desc:'GH secretagogue combo widely used for lean mass, with secondary anti-aging and sleep benefits.',
       img:'assets/cjc-1295-ipamorelin-1-JuJ36UDM.png.png'
     },
     {
-      gender:'him', name:'Tesamorelin', category:'Fitness',
+      gender:'him', name:'Tesamorelin', slug:'tesamorelin', category:'Fitness',
       desc:'GHRH analog that supports lean muscle mass and metabolic health alongside natural growth-hormone pulses.',
       img:'assets/tesamorelin-1-CRfOSXuX.png.png'
     },
     {
-      gender:'him', name:'MOTS-C', category:'Fitness',
+      gender:'him', name:'MOTS-C', slug:'mots-c', category:'Fitness',
       desc:'Mitochondrial-derived peptide that boosts exercise capacity and metabolic efficiency at the cellular level.',
       img:'assets/mots-c-1-BcuMa1MT.png.png'
     },
     {
-      gender:'him', name:'GHK-Cu', category:'Beauty',
+      gender:'him', name:'GHK-Cu', slug:'ghk-cu', category:'Beauty',
       desc:'Systemic copper peptide with broad anti-aging action plus skin, hair, and tissue-repair support.',
       img:'assets/ghk-cu-1-vI4S7jS2.png.png'
     },
 
     // ---- FOR HER — only the cream for now, per the client ----
     {
-      gender:'her', name:'GHK-Cu Cream', category:'Beauty',
+      gender:'her', name:'GHK-Cu Cream', slug:'ghk-cu-cream', category:'Beauty',
       desc:'Topical copper peptide for skin and hair, with anti-aging and anti-inflammatory support.',
       // Pink-packaged "For Her" cream photo (client-provided), distinct from
       // the blue-packaged ghk-cu-1 photo used in the "For Him" listing.
@@ -3745,7 +3745,7 @@
           '<p class="product-desc">' + p.desc + '</p>' +
           '<div class="product-divider"></div>' +
           '<div class="product-footer">' +
-            '<button class="btn-outline">Learn More</button>' +
+            '<a class="btn-outline" href="products/' + p.slug + '.html">Learn More</a>' +
           '</div>' +
         '</div>' +
       '</article>'
