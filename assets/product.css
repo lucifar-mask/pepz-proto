@@ -428,6 +428,48 @@ html.theme-her .pdp-badge{ color:#ffffff; }
 .pdp-dot:hover{ opacity:0.7; }
 .pdp-dot.active{ background:var(--brand); opacity:1; transform:scale(1.25); }
 
+/* ---------- Tag marquee (scrolling strip before the footer) ----------
+   Mirrors pepz.com's homepage ticker: uppercase labels streaming
+   horizontally, each capped with a cyan/pink "+" accent, bounded by the
+   site's hairline borders. Hover to pause; disabled under reduced-motion. */
+.pdp-marquee{
+  position:relative;
+  z-index:1;
+  margin-top:64px;
+  padding:26px 0;
+  overflow:hidden;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+          mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.pdp-marquee-inner{
+  display:flex;
+  width:max-content;
+  animation:pdp-marquee-scroll 38s linear infinite;
+}
+.pdp-marquee:hover .pdp-marquee-inner{ animation-play-state:paused; }
+@keyframes pdp-marquee-scroll{
+  from{ transform:translateX(0); }
+  to{ transform:translateX(-50%); }
+}
+.pdp-marquee-item{
+  display:inline-flex;
+  align-items:center;
+  gap:16px;
+  padding:0 28px;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:17px;
+  font-weight:500;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:var(--fg);
+  white-space:nowrap;
+}
+@media (prefers-reduced-motion:reduce){
+  .pdp-marquee-inner{ animation:none; transform:translateX(0); }
+}
+
 /* ---------- Trust bar (mirrors pepz.com) ---------- */
 .pdp-trust{
   position:relative;
